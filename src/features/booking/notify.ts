@@ -1,4 +1,5 @@
 import "server-only";
+import { pushAppointmentToGoogle, removeAppointmentFromGoogle } from "@/features/google/sync";
 import { notifyBookingCancelled, notifyBookingCreated } from "@/features/notifications/dispatch";
 
 export type BookingEvent = {
@@ -16,6 +17,10 @@ const listeners: Listener[] = [
   async (event) => {
     if (event.type === "created") await notifyBookingCreated(event.appointmentId);
     else await notifyBookingCancelled(event.appointmentId);
+  },
+  async (event) => {
+    if (event.type === "created") await pushAppointmentToGoogle(event.appointmentId);
+    else await removeAppointmentFromGoogle(event.appointmentId);
   },
 ];
 

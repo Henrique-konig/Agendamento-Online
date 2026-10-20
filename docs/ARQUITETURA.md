@@ -51,3 +51,15 @@ A conversão acontece em um único módulo puro e testado.
 5. `features/booking/notify.ts` dispara ganchos após criar/cancelar
    (notificações, sincronização), executados com `after()` para não atrasar a
    resposta.
+
+## Integrações externas
+
+- **Google Agenda** (`features/google/`): uma fonte de ocupados a mais em
+  `busySources` e um ouvinte em `features/booking/notify.ts` que cria/remove
+  eventos. Tokens criptografados (`lib/crypto/secretbox.ts`). Veja
+  [`GOOGLE-AGENDA.md`](GOOGLE-AGENDA.md).
+- **Notificações** (`features/notifications/`): outro ouvinte do mesmo
+  barramento. Veja [`LEMBRETES.md`](LEMBRETES.md).
+
+Integrações são opcionais: sem as variáveis de ambiente, ficam desligadas e o
+restante do sistema funciona normalmente.

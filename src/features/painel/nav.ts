@@ -12,4 +12,5 @@ export const painelNav: NavItem[] = [
   { href: "/painel/perfil", label: "Perfil" },
   { href: "/painel/fotos", label: "Fotos" },
   { href: "/painel/notificacoes", label: "Notificações" },
+  { href: "/painel/integracoes", label: "Integrações" },
 ];
