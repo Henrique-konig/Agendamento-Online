@@ -1,7 +1,7 @@
 import "server-only";
 import { emitBookingEvent } from "@/features/booking/notify";
 import { getPayment } from "@/lib/pix/mercadopago";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
 import { markAppointmentPaid } from "./charge";
 import { getPixSettings, mercadoPagoToken } from "./settings";
 
@@ -12,17 +12,14 @@ export type WebhookOutcome = "paid" | "ignored" | "not_found";
  * confiável: o status é sempre consultado na API com o token do profissional.
  */
 export async function handleMercadoPagoNotification(paymentId: string): Promise<WebhookOutcome> {
-  const admin = createAdminClient();
-  const { data: appointment } = await admin
-    .from("appointments")
-    .select("id, professional_id, payment_status")
-    .eq("payment_provider", "mercadopago")
-    .eq("payment_provider_id", paymentId)
-    .maybeSingle();
+  const appointment = await db.appointment.findFirst({
+    where: { payment_provider: "mercadopago", payment_provider_id: paymentId },
+    select: { id: true, professional_id: true, payment_status: true },
+  });
   if (!appointment) return "not_found";
   if (appointment.payment_status !== "pending") return "ignored";
 
-  const settings = await getPixSettings(admin, appointment.professional_id);
+  const settings = await getPixSettings(appointment.professional_id);
   if (!settings?.mp_access_token_enc) return "ignored";
 
   const payment = await getPayment(mercadoPagoToken(settings), paymentId);
@@ -30,7 +27,7 @@ export async function handleMercadoPagoNotification(paymentId: string): Promise<
     return "ignored";
   }
 
-  if (await markAppointmentPaid(admin, appointment.id)) {
+  if (await markAppointmentPaid(appointment.id)) {
     await emitBookingEvent({ type: "paid", appointmentId: appointment.id });
     return "paid";
   }

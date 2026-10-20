@@ -53,3 +53,8 @@ export function isLocalDate(value: string): value is LocalDate {
   const date = new Date(Date.UTC(y, m - 1, d));
   return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
 }
+
+/** Valor de coluna TIME lido pelo Prisma (Date em UTC) → "HH:MM". */
+export function timeColumnToString(value: Date) {
+  return value.toISOString().slice(11, 16);
+}

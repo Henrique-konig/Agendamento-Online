@@ -6,11 +6,11 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialActionState } from "@/lib/action-state";
-import type { Tables } from "@/types/database";
+import type { Professional } from "@/types/models";
 import { saveNotificationSettings } from "./settings";
 
 type Props = {
-  professional: Tables<"professionals">;
+  professional: Professional;
   accountEmail: string;
   emailConfigured: boolean;
   whatsappConfigured: boolean;

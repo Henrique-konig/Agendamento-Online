@@ -4,7 +4,7 @@ import { googleConfig } from "@/features/google/config";
 import { getUser } from "@/lib/auth";
 import { encrypt } from "@/lib/crypto/secretbox";
 import { emailFromIdToken, exchangeCode, hasCalendarScopes } from "@/lib/google/oauth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
 
 const STATE_COOKIE = "google_oauth_state";
 
@@ -43,17 +43,19 @@ export async function GET(request: NextRequest) {
     if (!hasCalendarScopes(tokens.scope)) return back("permissoes");
     if (!tokens.refresh_token) return back("erro");
 
-    const admin = createAdminClient();
-    const { error } = await admin.from("google_connections").upsert({
-      professional_id: user.id,
+    const data = {
       google_email: emailFromIdToken(tokens.id_token),
       refresh_token_enc: encrypt(tokens.refresh_token, config.encryptionKey),
       access_token_enc: encrypt(tokens.access_token, config.encryptionKey),
-      access_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+      access_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000),
       last_error: null,
       last_error_at: null,
+    };
+    await db.googleConnection.upsert({
+      where: { professional_id: user.id },
+      create: { professional_id: user.id, ...data },
+      update: data,
     });
-    if (error) throw error;
     return back("conectado");
   } catch (e) {
     console.error("[google] callback", e);

@@ -1,25 +1,13 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 
-export async function listOwnServices(professionalId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("services")
-    .select("*")
-    .eq("professional_id", professionalId)
-    .order("position")
-    .order("created_at");
-  if (error) throw error;
-  return data;
+export function listOwnServices(professionalId: string) {
+  return db.service.findMany({
+    where: { professional_id: professionalId },
+    orderBy: [{ position: "asc" }, { created_at: "asc" }],
+  });
 }
 
-export async function getOwnService(professionalId: string, id: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("services")
-    .select("*")
-    .eq("professional_id", professionalId)
-    .eq("id", id)
-    .maybeSingle();
-  return data;
+export function getOwnService(professionalId: string, id: string) {
+  return db.service.findFirst({ where: { id, professional_id: professionalId } });
 }

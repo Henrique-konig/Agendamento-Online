@@ -5,10 +5,10 @@ import { FormMessage } from "@/components/ui/alert";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialActionState } from "@/lib/action-state";
-import type { Tables } from "@/types/database";
+import type { Client } from "@/types/models";
 import { updateClient } from "./actions";
 
-export function ClientForm({ client }: { client: Tables<"clients"> }) {
+export function ClientForm({ client }: { client: Client }) {
   const [state, action] = useActionState(updateClient, initialActionState);
   const e = state.fieldErrors ?? {};
   return (

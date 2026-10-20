@@ -10,7 +10,7 @@ import { requireProfessional } from "@/lib/auth";
 import { formatPhoneBR, whatsappLink } from "@/lib/format/contact";
 import { capitalize, dateFormatters } from "@/lib/format/date";
 import { formatBRL } from "@/lib/format/money";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Cliente" };
 
@@ -19,26 +19,19 @@ export default async function ClientPage(props: PageProps<"/painel/clientes/[id]
   if (!z.uuid().safeParse(id).success) notFound();
   const professional = await requireProfessional();
 
-  const supabase = await createClient();
-  const [{ data: client }, { data: history }] = await Promise.all([
-    supabase
-      .from("clients")
-      .select("*")
-      .eq("id", id)
-      .eq("professional_id", professional.id)
-      .maybeSingle(),
-    supabase
-      .from("appointments")
-      .select("id, starts_at, status, service_name, price_cents")
-      .eq("client_id", id)
-      .eq("professional_id", professional.id)
-      .order("starts_at", { ascending: false })
-      .limit(50),
+  const [client, history] = await Promise.all([
+    db.client.findFirst({ where: { id, professional_id: professional.id } }),
+    db.appointment.findMany({
+      where: { client_id: id, professional_id: professional.id },
+      select: { id: true, starts_at: true, status: true, service_name: true, price_cents: true },
+      orderBy: { starts_at: "desc" },
+      take: 50,
+    }),
   ]);
   if (!client) notFound();
 
   const f = dateFormatters(professional.timezone);
-  const completed = (history ?? []).filter((a) => a.status === "completed");
+  const completed = history.filter((a) => a.status === "completed");
   const total = completed.reduce((sum, a) => sum + (a.price_cents ?? 0), 0);
 
   return (
@@ -63,7 +56,7 @@ export default async function ClientPage(props: PageProps<"/painel/clientes/[id]
         </Card>
         <Card>
           <CardHeader title="Histórico" />
-          {history?.length ? (
+          {history.length ? (
             <ul className="divide-y divide-ink-100 text-sm">
               {history.map((a) => (
                 <li key={a.id} className="flex justify-between gap-4 py-3">

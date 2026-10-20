@@ -1,14 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { getSessionUser } from "@/lib/auth/session";
 
-/** Usuário autenticado da requisição atual (deduplicado por render). */
-export const getUser = cache(async () => {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user;
-});
+/** Usuário autenticado da requisição atual. */
+export const getUser = getSessionUser;
 
 export async function requireUser() {
   const user = await getUser();
@@ -20,9 +17,7 @@ export async function requireUser() {
 export const getCurrentProfessional = cache(async () => {
   const user = await getUser();
   if (!user) return null;
-  const supabase = await createClient();
-  const { data } = await supabase.from("professionals").select("*").eq("id", user.id).maybeSingle();
-  return data;
+  return db.professional.findUnique({ where: { id: user.id } });
 });
 
 export async function requireProfessional() {

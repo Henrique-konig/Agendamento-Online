@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
     ];
   } catch {
-    // Sem Supabase configurado (ex.: build local) o sitemap traz só a home.
+    // Sem banco acessível (ex.: build sem DATABASE_URL) o sitemap traz só a home.
     return [home];
   }
 }

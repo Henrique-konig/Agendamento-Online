@@ -8,10 +8,10 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialActionState } from "@/lib/action-state";
 import { centsToInput } from "@/lib/format/money";
-import type { Tables } from "@/types/database";
+import type { Service } from "@/types/models";
 import { saveService } from "./actions";
 
-export function ServiceForm({ service }: { service?: Tables<"services"> }) {
+export function ServiceForm({ service }: { service?: Service }) {
   const [state, action] = useActionState(saveService, initialActionState);
   const e = state.fieldErrors ?? {};
 

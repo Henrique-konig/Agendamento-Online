@@ -1,8 +1,8 @@
 import "server-only";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
 import type { Interval } from "@/lib/scheduling/slots";
-import type { Database } from "@/types/database";
 import { googleBusySource } from "@/features/google/busy-source";
+import { ACTIVE_STATUSES } from "./policy";
 
 export type BusyRange = { professionalId: string; from: Date; to: Date };
 
@@ -10,37 +10,32 @@ export type BusyRange = { professionalId: string; from: Date; to: Date };
  * Fonte de horários ocupados. Novas integrações (ex.: Google Agenda) entram
  * como fontes adicionais sem alterar o cálculo de horários.
  */
-export type BusySource = (
-  supabase: SupabaseClient<Database>,
-  range: BusyRange,
-) => Promise<Interval[]>;
+export type BusySource = (range: BusyRange) => Promise<Interval[]>;
 
-export const appointmentsSource: BusySource = async (supabase, { professionalId, from, to }) => {
-  const { data, error } = await supabase
-    .from("appointments")
-    .select("starts_at, ends_at")
-    .eq("professional_id", professionalId)
-    .in("status", ["pending", "confirmed"])
-    .lt("starts_at", to.toISOString())
-    .gt("ends_at", from.toISOString());
-  if (error) throw error;
-  return data.map((a) => ({ start: new Date(a.starts_at), end: new Date(a.ends_at) }));
+export const appointmentsSource: BusySource = async ({ professionalId, from, to }) => {
+  const rows = await db.appointment.findMany({
+    where: {
+      professional_id: professionalId,
+      status: { in: [...ACTIVE_STATUSES] },
+      starts_at: { lt: to },
+      ends_at: { gt: from },
+    },
+    select: { starts_at: true, ends_at: true },
+  });
+  return rows.map((a) => ({ start: a.starts_at, end: a.ends_at }));
 };
 
-export const timeOffSource: BusySource = async (supabase, { professionalId, from, to }) => {
-  const { data, error } = await supabase
-    .from("time_off")
-    .select("starts_at, ends_at")
-    .eq("professional_id", professionalId)
-    .lt("starts_at", to.toISOString())
-    .gt("ends_at", from.toISOString());
-  if (error) throw error;
-  return data.map((t) => ({ start: new Date(t.starts_at), end: new Date(t.ends_at) }));
+export const timeOffSource: BusySource = async ({ professionalId, from, to }) => {
+  const rows = await db.timeOff.findMany({
+    where: { professional_id: professionalId, starts_at: { lt: to }, ends_at: { gt: from } },
+    select: { starts_at: true, ends_at: true },
+  });
+  return rows.map((t) => ({ start: t.starts_at, end: t.ends_at }));
 };
 
 export const busySources: BusySource[] = [appointmentsSource, timeOffSource, googleBusySource];
 
-export async function collectBusy(supabase: SupabaseClient<Database>, range: BusyRange) {
-  const results = await Promise.all(busySources.map((source) => source(supabase, range)));
+export async function collectBusy(range: BusyRange) {
+  const results = await Promise.all(busySources.map((source) => source(range)));
   return results.flat();
 }

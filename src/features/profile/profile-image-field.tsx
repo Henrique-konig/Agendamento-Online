@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { uploadImage } from "@/features/photos/image-upload";
-import { publicMediaUrl } from "@/lib/storage";
 import { cn } from "@/lib/utils/cn";
 import { setProfileImage } from "./actions";
 
@@ -12,24 +11,23 @@ type Props = {
   kind: "avatar" | "cover";
   label: string;
   professionalId: string;
-  currentPath: string | null;
+  currentUrl: string | null;
 };
 
-export function ProfileImageField({ kind, label, professionalId, currentPath }: Props) {
+export function ProfileImageField({ kind, label, professionalId, currentUrl }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [path, setPath] = useState(currentPath);
+  const [url, setUrl] = useState(currentUrl);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const url = publicMediaUrl(path);
 
   function handleFile(file: File) {
     setError(null);
     startTransition(async () => {
       try {
-        const newPath = await uploadImage(file, professionalId, kind);
-        const result = await setProfileImage({ kind, path: newPath });
+        const newUrl = await uploadImage(file, professionalId, kind);
+        const result = await setProfileImage({ kind, url: newUrl });
         if (!result.ok) throw new Error(result.message);
-        setPath(newPath);
+        setUrl(newUrl);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Falha no envio.");
       }
@@ -38,8 +36,8 @@ export function ProfileImageField({ kind, label, professionalId, currentPath }: 
 
   function handleRemove() {
     startTransition(async () => {
-      const result = await setProfileImage({ kind, path: null });
-      if (result.ok) setPath(null);
+      const result = await setProfileImage({ kind, url: null });
+      if (result.ok) setUrl(null);
       else setError(result.message ?? "Falha ao remover.");
     });
   }
@@ -63,9 +61,9 @@ export function ProfileImageField({ kind, label, professionalId, currentPath }: 
             disabled={pending}
             onClick={() => inputRef.current?.click()}
           >
-            {pending ? "Enviando…" : path ? "Trocar" : "Enviar imagem"}
+            {pending ? "Enviando…" : url ? "Trocar" : "Enviar imagem"}
           </Button>
-          {path ? (
+          {url ? (
             <Button variant="ghost" size="sm" disabled={pending} onClick={handleRemove}>
               Remover
             </Button>

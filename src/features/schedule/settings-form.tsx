@@ -6,7 +6,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Field, Select } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialActionState } from "@/lib/action-state";
-import type { Tables } from "@/types/database";
+import type { Professional } from "@/types/models";
 import { saveScheduleSettings } from "./actions";
 
 const intervals = [10, 15, 20, 30, 45, 60, 90, 120];
@@ -23,11 +23,7 @@ const notices = [
 const horizons = [7, 14, 30, 60, 90];
 const buffers = [0, 5, 10, 15, 30, 45, 60];
 
-export function ScheduleSettingsForm({
-  professional: p,
-}: {
-  professional: Tables<"professionals">;
-}) {
+export function ScheduleSettingsForm({ professional: p }: { professional: Professional }) {
   const [state, action] = useActionState(saveScheduleSettings, initialActionState);
 
   return (

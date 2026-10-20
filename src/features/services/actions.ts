@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { fromZodError, type ActionState } from "@/lib/action-state";
 import { requireProfessional } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 import { serviceSchema, toServiceRow } from "./schemas";
 
 function revalidate(slug: string) {
@@ -19,25 +19,23 @@ export async function saveService(_prev: ActionState, formData: FormData): Promi
   if (!parsed.success) return fromZodError(parsed.error);
 
   const id = z.uuid().safeParse(formData.get("id"));
-  const supabase = await createClient();
   const row = toServiceRow(parsed.data);
 
-  if (id.success) {
-    const { error } = await supabase
-      .from("services")
-      .update(row)
-      .eq("id", id.data)
-      .eq("professional_id", professional.id);
-    if (error) return { ok: false, message: "Não foi possível salvar o serviço." };
-  } else {
-    const { count } = await supabase
-      .from("services")
-      .select("id", { count: "exact", head: true })
-      .eq("professional_id", professional.id);
-    const { error } = await supabase
-      .from("services")
-      .insert({ ...row, professional_id: professional.id, position: count ?? 0 });
-    if (error) return { ok: false, message: "Não foi possível criar o serviço." };
+  try {
+    if (id.success) {
+      await db.service.updateMany({
+        where: { id: id.data, professional_id: professional.id },
+        data: row,
+      });
+    } else {
+      const count = await db.service.count({ where: { professional_id: professional.id } });
+      await db.service.create({
+        data: { ...row, professional_id: professional.id, position: count },
+      });
+    }
+  } catch (error) {
+    console.error("[services] falha ao salvar", error);
+    return { ok: false, message: "Não foi possível salvar o serviço." };
   }
 
   revalidate(professional.slug);
@@ -47,8 +45,7 @@ export async function saveService(_prev: ActionState, formData: FormData): Promi
 export async function deleteService(formData: FormData) {
   const professional = await requireProfessional();
   const id = z.uuid().parse(formData.get("id"));
-  const supabase = await createClient();
-  await supabase.from("services").delete().eq("id", id).eq("professional_id", professional.id);
+  await db.service.deleteMany({ where: { id, professional_id: professional.id } });
   revalidate(professional.slug);
   redirect("/painel/servicos");
 }
@@ -59,14 +56,11 @@ export async function moveService(formData: FormData) {
   const id = z.uuid().parse(formData.get("id"));
   const direction = z.enum(["up", "down"]).parse(formData.get("direction"));
 
-  const supabase = await createClient();
-  const { data: services } = await supabase
-    .from("services")
-    .select("id, position")
-    .eq("professional_id", professional.id)
-    .order("position")
-    .order("created_at");
-  if (!services) return;
+  const services = await db.service.findMany({
+    where: { professional_id: professional.id },
+    orderBy: [{ position: "asc" }, { created_at: "asc" }],
+    select: { id: true, position: true },
+  });
 
   const index = services.findIndex((s) => s.id === id);
   const target = direction === "up" ? index - 1 : index + 1;
@@ -74,12 +68,17 @@ export async function moveService(formData: FormData) {
 
   const ordered = [...services];
   [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
-  await Promise.all(
-    ordered.map((s, position) =>
-      s.position === position
-        ? null
-        : supabase.from("services").update({ position }).eq("id", s.id),
-    ),
+  await db.$transaction(
+    ordered
+      .map((s, position) =>
+        s.position === position
+          ? null
+          : db.service.updateMany({
+              where: { id: s.id, professional_id: professional.id },
+              data: { position },
+            }),
+      )
+      .filter((op) => op !== null),
   );
   revalidate(professional.slug);
 }

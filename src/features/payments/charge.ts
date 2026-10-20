@@ -1,12 +1,9 @@
 import "server-only";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
 import { siteUrl } from "@/lib/env";
 import { buildStaticPix } from "@/lib/pix/brcode";
 import { createPixPayment } from "@/lib/pix/mercadopago";
-import type { Database } from "@/types/database";
 import { mercadoPagoToken, type PixSettings } from "./settings";
-
-type Admin = SupabaseClient<Database>;
 
 type ChargeInput = {
   appointmentId: string;
@@ -21,7 +18,7 @@ type ChargeInput = {
  * - manual: BR Code estático com a chave do profissional (confirmação no painel)
  * - mercadopago: cobrança dinâmica com confirmação automática por webhook
  */
-export async function createCharge(admin: Admin, settings: PixSettings, input: ChargeInput) {
+export async function createCharge(settings: PixSettings, input: ChargeInput) {
   let copyPaste: string;
   let providerId: string | null = null;
 
@@ -52,28 +49,24 @@ export async function createCharge(admin: Admin, settings: PixSettings, input: C
     providerId = String(payment.id);
   }
 
-  const { error } = await admin
-    .from("appointments")
-    .update({
+  await db.appointment.update({
+    where: { id: input.appointmentId },
+    data: {
       payment_status: "pending",
       payment_provider: settings.mode,
       payment_provider_id: providerId,
       payment_amount_cents: input.amountCents,
-      payment_expires_at: input.expiresAt.toISOString(),
+      payment_expires_at: input.expiresAt,
       pix_copy_paste: copyPaste,
-    })
-    .eq("id", input.appointmentId);
-  if (error) throw error;
+    },
+  });
 }
 
 /** Marca como pago e confirma o agendamento. Retorna true se mudou o estado. */
-export async function markAppointmentPaid(admin: Admin, appointmentId: string) {
-  const { data } = await admin
-    .from("appointments")
-    .update({ payment_status: "paid", status: "confirmed", paid_at: new Date().toISOString() })
-    .eq("id", appointmentId)
-    .eq("payment_status", "pending")
-    .select("id")
-    .maybeSingle();
-  return Boolean(data);
+export async function markAppointmentPaid(appointmentId: string) {
+  const { count } = await db.appointment.updateMany({
+    where: { id: appointmentId, payment_status: "pending" },
+    data: { payment_status: "paid", status: "confirmed", paid_at: new Date() },
+  });
+  return count > 0;
 }

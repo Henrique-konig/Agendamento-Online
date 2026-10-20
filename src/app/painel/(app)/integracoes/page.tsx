@@ -7,7 +7,7 @@ import { disconnectGoogle, updateGoogleSettings } from "@/features/google/action
 import { googleConfig } from "@/features/google/config";
 import { requireProfessional } from "@/lib/auth";
 import { dateFormatters } from "@/lib/format/date";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Integrações" };
 
@@ -29,11 +29,17 @@ export default async function IntegrationsPage(props: PageProps<"/painel/integra
     typeof searchParams.google === "string" ? messages[searchParams.google] : undefined;
 
   // Leitura pelo servidor, sem expor os tokens ao navegador.
-  const { data: connection } = await createAdminClient()
-    .from("google_connections")
-    .select("google_email, sync_busy, create_events, last_error, last_error_at, created_at")
-    .eq("professional_id", professional.id)
-    .maybeSingle();
+  const connection = await db.googleConnection.findUnique({
+    where: { professional_id: professional.id },
+    select: {
+      google_email: true,
+      sync_busy: true,
+      create_events: true,
+      last_error: true,
+      last_error_at: true,
+      created_at: true,
+    },
+  });
   const available = Boolean(googleConfig());
   const f = dateFormatters(professional.timezone);
 

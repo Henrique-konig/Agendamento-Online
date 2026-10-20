@@ -4,8 +4,8 @@ import { sendEmail, type EmailMessage } from "@/lib/notifications/email";
 import type { DeliveryResult } from "@/lib/notifications/types";
 import { isWhatsAppConfigured, sendWhatsAppTemplate } from "@/lib/notifications/whatsapp";
 import { integrationsEnv } from "@/lib/env";
-import { createAdminClient } from "@/lib/supabase/admin";
-import type { Database, Tables } from "@/types/database";
+import { db } from "@/lib/db";
+import type { NotificationChannel, Professional } from "@/types/models";
 import {
   cancellationEmail,
   clientConfirmationEmail,
@@ -16,31 +16,29 @@ import {
   type AppointmentContext,
 } from "./templates";
 
-type Admin = ReturnType<typeof createAdminClient>;
-type Channel = Database["public"]["Enums"]["notification_channel"];
-
 type LoadedAppointment = {
   ctx: AppointmentContext;
-  professional: Tables<"professionals">;
+  professional: Professional;
   professionalEmail: string | null;
 };
 
-async function professionalEmail(admin: Admin, professional: Tables<"professionals">) {
+async function professionalEmail(professional: Professional) {
   if (professional.notification_email) return professional.notification_email;
-  const { data } = await admin.auth.admin.getUserById(professional.id);
-  return data.user?.email ?? null;
+  const user = await db.user.findUnique({
+    where: { id: professional.id },
+    select: { email: true },
+  });
+  return user?.email ?? null;
 }
 
 export async function loadAppointmentContext(
-  admin: Admin,
   appointmentId: string,
 ): Promise<LoadedAppointment | null> {
-  const { data } = await admin
-    .from("appointments")
-    .select("*, client:clients(name, phone, email), professional:professionals(*)")
-    .eq("id", appointmentId)
-    .maybeSingle();
-  if (!data?.client || !data.professional) return null;
+  const data = await db.appointment.findUnique({
+    where: { id: appointmentId },
+    include: { client: true, professional: true },
+  });
+  if (!data) return null;
 
   const p = data.professional;
   const location = p.show_address
@@ -49,12 +47,12 @@ export async function loadAppointmentContext(
 
   return {
     professional: p,
-    professionalEmail: await professionalEmail(admin, p),
+    professionalEmail: await professionalEmail(p),
     ctx: {
       appointmentId: data.id,
       serviceName: data.service_name,
-      startsAt: data.starts_at,
-      endsAt: data.ends_at,
+      startsAt: data.starts_at.toISOString(),
+      endsAt: data.ends_at.toISOString(),
       priceCents: data.price_cents,
       status: data.status,
       paymentStatus: data.payment_status,
@@ -73,59 +71,55 @@ export async function loadAppointmentContext(
   };
 }
 
-async function log(
-  admin: Admin,
-  entry: {
-    professionalId: string;
-    appointmentId?: string;
-    quoteId?: string;
-    kind: string;
-    channel: Channel;
-    recipient: string | null;
-    result: DeliveryResult;
-  },
-) {
+async function log(entry: {
+  professionalId: string;
+  appointmentId?: string;
+  quoteId?: string;
+  kind: string;
+  channel: NotificationChannel;
+  recipient: string | null;
+  result: DeliveryResult;
+}) {
   const { result } = entry;
-  await admin.from("notification_log").insert({
-    professional_id: entry.professionalId,
-    appointment_id: entry.appointmentId ?? null,
-    quote_id: entry.quoteId ?? null,
-    kind: entry.kind,
-    channel: entry.channel,
-    recipient: entry.recipient,
-    status: result.status,
-    provider_id: result.status === "sent" ? (result.providerId ?? null) : null,
-    error:
-      result.status === "failed"
-        ? result.error
-        : result.status === "skipped"
-          ? result.reason
-          : null,
+  await db.notificationLog.create({
+    data: {
+      professional_id: entry.professionalId,
+      appointment_id: entry.appointmentId ?? null,
+      quote_id: entry.quoteId ?? null,
+      kind: entry.kind,
+      channel: entry.channel,
+      recipient: entry.recipient,
+      status: result.status,
+      provider_id: result.status === "sent" ? (result.providerId ?? null) : null,
+      error:
+        result.status === "failed"
+          ? result.error
+          : result.status === "skipped"
+            ? result.reason
+            : null,
+    },
   });
 }
 
 async function email(
-  admin: Admin,
   meta: { professionalId: string; appointmentId?: string; quoteId?: string; kind: string },
   message: Omit<EmailMessage, "to"> & { to: string | null },
 ) {
   const result: DeliveryResult = message.to
     ? await sendEmail({ ...message, to: message.to })
     : { status: "skipped", reason: "sem e-mail" };
-  await log(admin, { ...meta, channel: "email", recipient: message.to, result });
+  await log({ ...meta, channel: "email", recipient: message.to, result });
   return result;
 }
 
 /** Confirmação para o cliente e aviso para o profissional. */
 export async function notifyBookingCreated(appointmentId: string) {
-  const admin = createAdminClient();
-  const loaded = await loadAppointmentContext(admin, appointmentId);
+  const loaded = await loadAppointmentContext(appointmentId);
   if (!loaded) return;
   const { ctx, professional } = loaded;
   const meta = { professionalId: professional.id, appointmentId };
 
   await email(
-    admin,
     { ...meta, kind: "booking_confirmation" },
     {
       to: ctx.client.email,
@@ -136,7 +130,6 @@ export async function notifyBookingCreated(appointmentId: string) {
 
   if (professional.notify_new_booking) {
     await email(
-      admin,
       { ...meta, kind: "booking_new_professional" },
       {
         to: loaded.professionalEmail,
@@ -150,14 +143,12 @@ export async function notifyBookingCreated(appointmentId: string) {
 
 /** Pagamento antecipado confirmado: confirmação ao cliente e aviso ao profissional. */
 export async function notifyPaymentConfirmed(appointmentId: string) {
-  const admin = createAdminClient();
-  const loaded = await loadAppointmentContext(admin, appointmentId);
+  const loaded = await loadAppointmentContext(appointmentId);
   if (!loaded) return;
   const { ctx, professional } = loaded;
   const meta = { professionalId: professional.id, appointmentId };
 
   await email(
-    admin,
     { ...meta, kind: "payment_confirmed_client" },
     {
       to: ctx.client.email,
@@ -167,7 +158,6 @@ export async function notifyPaymentConfirmed(appointmentId: string) {
   );
   if (professional.notify_new_booking) {
     await email(
-      admin,
       { ...meta, kind: "payment_confirmed_professional" },
       {
         to: loaded.professionalEmail,
@@ -179,14 +169,12 @@ export async function notifyPaymentConfirmed(appointmentId: string) {
 }
 
 export async function notifyBookingCancelled(appointmentId: string) {
-  const admin = createAdminClient();
-  const loaded = await loadAppointmentContext(admin, appointmentId);
+  const loaded = await loadAppointmentContext(appointmentId);
   if (!loaded) return;
   const { ctx, professional } = loaded;
   const meta = { professionalId: professional.id, appointmentId };
 
   await email(
-    admin,
     { ...meta, kind: "cancellation_client" },
     {
       to: ctx.client.email,
@@ -196,7 +184,6 @@ export async function notifyBookingCancelled(appointmentId: string) {
   );
   if (professional.notify_new_booking) {
     await email(
-      admin,
       { ...meta, kind: "cancellation_professional" },
       {
         to: loaded.professionalEmail,
@@ -208,14 +195,14 @@ export async function notifyBookingCancelled(appointmentId: string) {
 }
 
 /** Envia o lembrete do dia anterior pelos canais habilitados. */
-export async function sendReminder(admin: Admin, appointmentId: string) {
-  const loaded = await loadAppointmentContext(admin, appointmentId);
+export async function sendReminder(appointmentId: string) {
+  const loaded = await loadAppointmentContext(appointmentId);
   if (!loaded) return;
   const { ctx, professional } = loaded;
   const meta = { professionalId: professional.id, appointmentId, kind: "reminder" };
 
   if (professional.reminder_email) {
-    await email(admin, meta, {
+    await email(meta, {
       to: ctx.client.email,
       ...reminderEmail(ctx),
       idempotencyKey: `reminder-${appointmentId}`,
@@ -230,24 +217,21 @@ export async function sendReminder(admin: Admin, appointmentId: string) {
           bodyParams: reminderWhatsAppParams(ctx),
         })
       : { status: "skipped", reason: "WhatsApp não configurado" };
-    await log(admin, { ...meta, channel: "whatsapp", recipient: ctx.client.phone, result });
+    await log({ ...meta, channel: "whatsapp", recipient: ctx.client.phone, result });
   }
 }
 
 export async function notifyNewQuote(quoteId: string) {
-  const admin = createAdminClient();
-  const { data: quote } = await admin
-    .from("quote_requests")
-    .select("*, professional:professionals(*)")
-    .eq("id", quoteId)
-    .maybeSingle();
-  if (!quote?.professional || !quote.professional.notify_new_booking) return;
+  const quote = await db.quoteRequest.findUnique({
+    where: { id: quoteId },
+    include: { professional: true },
+  });
+  if (!quote?.professional.notify_new_booking) return;
 
   await email(
-    admin,
     { professionalId: quote.professional_id, quoteId, kind: "quote_new_professional" },
     {
-      to: await professionalEmail(admin, quote.professional),
+      to: await professionalEmail(quote.professional),
       ...newQuoteEmail({
         name: quote.name,
         phone: quote.phone,

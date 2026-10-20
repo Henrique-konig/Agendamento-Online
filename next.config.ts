@@ -1,9 +1,5 @@
 import type { NextConfig } from "next";
 
-const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
-  : undefined;
-
 const nextConfig: NextConfig = {
   // Páginas são majoritariamente dinâmicas (dados por profissional e sessão),
   // então mantemos o modelo de renderização clássico.
@@ -18,9 +14,8 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    remotePatterns: supabaseHost
-      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
-      : [],
+    // Fotos enviadas pelos profissionais ficam no Vercel Blob (armazenamento público).
+    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
   },
   async headers() {
     return [

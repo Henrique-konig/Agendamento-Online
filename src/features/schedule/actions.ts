@@ -5,7 +5,8 @@ import { z } from "zod";
 import { fromZodError, type ActionState } from "@/lib/action-state";
 import { requireProfessional } from "@/lib/auth";
 import { addDays, timeToMinutes, zonedToInstant } from "@/lib/scheduling/time";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { isPgError, PG } from "@/lib/db-errors";
 import { rulesSchema, settingsSchema, timeOffSchema } from "./schemas";
 
 export async function saveScheduleSettings(
@@ -16,12 +17,12 @@ export async function saveScheduleSettings(
   const parsed = settingsSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("professionals")
-    .update(parsed.data)
-    .eq("id", professional.id);
-  if (error) return { ok: false, message: "Não foi possível salvar." };
+  try {
+    await db.professional.update({ where: { id: professional.id }, data: parsed.data });
+  } catch (error) {
+    console.error("[horarios] falha ao salvar regras", error);
+    return { ok: false, message: "Não foi possível salvar." };
+  }
 
   revalidatePath(`/${professional.slug}`);
   revalidatePath("/painel/horarios");
@@ -32,7 +33,7 @@ export async function saveAvailability(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireProfessional();
+  const professional = await requireProfessional();
   let raw: unknown;
   try {
     raw = JSON.parse(String(formData.get("rules") ?? "[]"));
@@ -44,9 +45,26 @@ export async function saveAvailability(
     return { ok: false, message: parsed.error.issues[0]?.message ?? "Horários inválidos." };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("replace_availability", { rules: parsed.data });
-  if (error) return { ok: false, message: "Não foi possível salvar os horários." };
+  try {
+    // Substitui todas as faixas de uma vez: ou grava tudo, ou nada.
+    await db.$transaction([
+      db.availabilityRule.deleteMany({ where: { professional_id: professional.id } }),
+      db.availabilityRule.createMany({
+        data: parsed.data.map((r) => ({
+          professional_id: professional.id,
+          weekday: r.weekday,
+          start_time: toTimeColumn(r.start_time),
+          end_time: toTimeColumn(r.end_time),
+        })),
+      }),
+    ]);
+  } catch (error) {
+    if (isPgError(error, PG.EXCLUSION)) {
+      return { ok: false, message: "Há faixas de horário sobrepostas no mesmo dia." };
+    }
+    console.error("[horarios] falha ao salvar faixas", error);
+    return { ok: false, message: "Não foi possível salvar os horários." };
+  }
 
   revalidatePath("/painel/horarios");
   return { ok: true, message: "Horários de atendimento salvos." };
@@ -66,14 +84,19 @@ export async function createTimeOff(_prev: ActionState, formData: FormData): Pro
     ? zonedToInstant(addDays(v.end_date, 1), 0, tz)
     : zonedToInstant(v.end_date, timeToMinutes(v.end_time!), tz);
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("time_off").insert({
-    professional_id: professional.id,
-    starts_at: startsAt.toISOString(),
-    ends_at: endsAt.toISOString(),
-    reason: v.reason || null,
-  });
-  if (error) return { ok: false, message: "Não foi possível criar o bloqueio." };
+  try {
+    await db.timeOff.create({
+      data: {
+        professional_id: professional.id,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        reason: v.reason || null,
+      },
+    });
+  } catch (error) {
+    console.error("[bloqueios] falha ao criar", error);
+    return { ok: false, message: "Não foi possível criar o bloqueio." };
+  }
 
   revalidatePath("/painel/bloqueios");
   return { ok: true, message: "Bloqueio criado. Esses horários não aparecem mais para clientes." };
@@ -82,7 +105,11 @@ export async function createTimeOff(_prev: ActionState, formData: FormData): Pro
 export async function deleteTimeOff(formData: FormData) {
   const professional = await requireProfessional();
   const id = z.uuid().parse(formData.get("id"));
-  const supabase = await createClient();
-  await supabase.from("time_off").delete().eq("id", id).eq("professional_id", professional.id);
+  await db.timeOff.deleteMany({ where: { id, professional_id: professional.id } });
   revalidatePath("/painel/bloqueios");
+}
+
+/** "HH:MM" → valor para coluna TIME do Prisma (Date em UTC na data-base 1970-01-01). */
+function toTimeColumn(time: string) {
+  return new Date(`1970-01-01T${time}:00.000Z`);
 }

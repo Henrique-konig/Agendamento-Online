@@ -5,8 +5,7 @@ import { after } from "next/server";
 import { z } from "zod";
 import { fromZodError, type ActionState } from "@/lib/action-state";
 import { requireProfessional } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 import { upsertClient } from "@/features/clients/upsert";
 import { emitQuoteEvent } from "./notify";
 import { quoteSchema } from "./schemas";
@@ -19,54 +18,46 @@ export async function createQuoteRequest(
   if (!parsed.success) return fromZodError(parsed.error);
   const input = parsed.data;
 
-  const supabase = createAdminClient();
-  const { data: professional } = await supabase
-    .from("professionals")
-    .select("id")
-    .eq("slug", input.slug.toLowerCase())
-    .eq("published", true)
-    .maybeSingle();
+  const professional = await db.professional.findFirst({
+    where: { slug: input.slug.toLowerCase(), published: true },
+    select: { id: true },
+  });
   if (!professional) return { ok: false, message: "Profissional não encontrado." };
 
-  let serviceName: string | null = null;
-  if (input.service_id) {
-    const { data: service } = await supabase
-      .from("services")
-      .select("name")
-      .eq("id", input.service_id)
-      .eq("professional_id", professional.id)
-      .maybeSingle();
-    serviceName = service?.name ?? null;
-  }
+  const service = input.service_id
+    ? await db.service.findFirst({
+        where: { id: input.service_id, professional_id: professional.id },
+        select: { id: true, name: true },
+      })
+    : null;
 
-  const clientId = await upsertClient(supabase, professional.id, input);
+  const clientId = await upsertClient(professional.id, input);
 
-  const { count } = await supabase
-    .from("quote_requests")
-    .select("id", { count: "exact", head: true })
-    .eq("client_id", clientId)
-    .gte("created_at", new Date(Date.now() - 60 * 60_000).toISOString());
-  if ((count ?? 0) >= 3) {
+  const recent = await db.quoteRequest.count({
+    where: { client_id: clientId, created_at: { gte: new Date(Date.now() - 60 * 60_000) } },
+  });
+  if (recent >= 3) {
     return { ok: false, message: "Recebemos seus pedidos. Aguarde o retorno do profissional." };
   }
 
-  const { data: quote, error } = await supabase
-    .from("quote_requests")
-    .insert({
-      professional_id: professional.id,
-      client_id: clientId,
-      service_id: serviceName ? input.service_id : null,
-      service_name: serviceName,
-      name: input.name,
-      phone: input.phone,
-      email: input.email,
-      description: input.description,
-      location: input.location,
-      preferred_period: input.preferred_period,
-    })
-    .select("id")
-    .single();
-  if (error) {
+  let quote: { id: string };
+  try {
+    quote = await db.quoteRequest.create({
+      data: {
+        professional_id: professional.id,
+        client_id: clientId,
+        service_id: service?.id ?? null,
+        service_name: service?.name ?? null,
+        name: input.name,
+        phone: input.phone,
+        email: input.email,
+        description: input.description,
+        location: input.location,
+        preferred_period: input.preferred_period,
+      },
+      select: { id: true },
+    });
+  } catch (error) {
     console.error("[quotes] falha ao criar pedido", error);
     return { ok: false, message: "Não foi possível enviar. Tente novamente." };
   }
@@ -87,11 +78,9 @@ const statusSchema = z.object({
 export async function updateQuoteStatus(formData: FormData) {
   const professional = await requireProfessional();
   const parsed = statusSchema.parse(Object.fromEntries(formData));
-  const supabase = await createClient();
-  await supabase
-    .from("quote_requests")
-    .update({ status: parsed.status })
-    .eq("id", parsed.id)
-    .eq("professional_id", professional.id);
+  await db.quoteRequest.updateMany({
+    where: { id: parsed.id, professional_id: professional.id },
+    data: { status: parsed.status },
+  });
   revalidatePath("/painel/orcamentos");
 }

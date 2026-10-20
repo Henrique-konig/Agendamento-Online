@@ -1,0 +1,37 @@
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { NextResponse } from "next/server";
+import { getCurrentProfessional } from "@/lib/auth";
+import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/lib/storage";
+
+/**
+ * Autoriza o envio direto do navegador para o Vercel Blob. Só profissionais
+ * logados enviam, e apenas para a própria pasta, com tipo e tamanho limitados.
+ */
+export async function POST(request: Request) {
+  const body = (await request.json()) as HandleUploadBody;
+  const professional = await getCurrentProfessional();
+
+  try {
+    const result = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname) => {
+        if (!professional) throw new Error("Não autorizado");
+        if (!pathname.startsWith(`${professional.id}/`) || pathname.includes("..")) {
+          throw new Error("Caminho inválido");
+        }
+        return {
+          allowedContentTypes: ACCEPTED_IMAGE_TYPES,
+          maximumSizeInBytes: MAX_IMAGE_BYTES,
+          addRandomSuffix: true,
+        };
+      },
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Falha no envio" },
+      { status: 400 },
+    );
+  }
+}

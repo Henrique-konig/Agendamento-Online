@@ -22,13 +22,13 @@ export default async function ProfilePage() {
               kind="avatar"
               label="Foto de perfil ou logo"
               professionalId={professional.id}
-              currentPath={professional.avatar_path}
+              currentUrl={professional.avatar_url}
             />
             <ProfileImageField
               kind="cover"
               label="Imagem de capa"
               professionalId={professional.id}
-              currentPath={professional.cover_path}
+              currentUrl={professional.cover_url}
             />
           </div>
         </Card>

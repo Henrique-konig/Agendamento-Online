@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { publicMediaUrl } from "@/lib/storage";
-import type { Tables } from "@/types/database";
+import type { Professional } from "@/types/models";
 
 /** Cabeçalho compacto para as páginas internas do profissional (agendar, orçamento...). */
 export function PublicShell({
@@ -10,14 +9,11 @@ export function PublicShell({
   title,
   children,
 }: {
-  professional: Pick<
-    Tables<"professionals">,
-    "slug" | "display_name" | "profession" | "avatar_path"
-  >;
+  professional: Pick<Professional, "slug" | "display_name" | "profession" | "avatar_url">;
   title: string;
   children: ReactNode;
 }) {
-  const avatar = publicMediaUrl(professional.avatar_path);
+  const avatar = professional.avatar_url;
   return (
     <>
       <header className="border-b border-ink-200 bg-white">

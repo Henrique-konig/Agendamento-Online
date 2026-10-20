@@ -1,0 +1,356 @@
+// Esquema do banco (Neon Postgres). Nomes de campos mantidos em snake_case,
+// iguais aos nomes das colunas. Regras que o Prisma não expressa (exclusão de
+// sobreposição, CHECKs, gatilhos) ficam em prisma/migrations/*/migration.sql.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+  no_show
+
+  @@map("appointment_status")
+}
+
+enum QuoteStatus {
+  new
+  contacted
+  scheduled
+  closed
+
+  @@map("quote_status")
+}
+
+enum NotificationChannel {
+  email
+  whatsapp
+
+  @@map("notification_channel")
+}
+
+enum NotificationStatus {
+  sent
+  failed
+  skipped
+
+  @@map("notification_status")
+}
+
+enum PixMode {
+  manual
+  mercadopago
+
+  @@map("pix_mode")
+}
+
+enum PaymentStatus {
+  not_required
+  pending
+  paid
+  expired
+  refunded
+
+  @@map("payment_status")
+}
+
+/// Conta de acesso. O profissional (tenant) tem o mesmo id.
+model User {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String   @unique
+  password_hash String
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  sessions     Session[]
+  professional Professional?
+
+  @@map("users")
+}
+
+/// Sessão de login. Guardamos só o hash do token do cookie.
+model Session {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  token_hash String   @unique
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("sessions")
+}
+
+/// Tentativas de login recentes, para limitar força bruta.
+model LoginAttempt {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String
+  ip         String?
+  success    Boolean
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([email, created_at])
+  @@index([ip, created_at])
+  @@map("login_attempts")
+}
+
+model Professional {
+  id                    String   @id @db.Uuid
+  slug                  String   @unique
+  display_name          String
+  profession            String
+  timezone              String   @default("America/Sao_Paulo")
+  published             Boolean  @default(false)
+  bio                   String?
+  phone                 String?
+  whatsapp              String?
+  contact_email         String?
+  instagram             String?
+  address_line          String?
+  neighborhood          String?
+  city                  String?
+  state                 String?  @db.Char(2)
+  postal_code           String?
+  service_area          String?
+  show_address          Boolean  @default(true)
+  avatar_url            String?
+  cover_url             String?
+  booking_enabled       Boolean  @default(true)
+  auto_confirm          Boolean  @default(true)
+  slot_interval_minutes Int      @default(30)
+  min_notice_minutes    Int      @default(120)
+  max_days_ahead        Int      @default(30)
+  buffer_minutes        Int      @default(0)
+  notification_email    String?
+  notify_new_booking    Boolean  @default(true)
+  reminder_email        Boolean  @default(true)
+  reminder_whatsapp     Boolean  @default(false)
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user               User               @relation(fields: [id], references: [id], onDelete: Cascade)
+  services           Service[]
+  photos             Photo[]
+  availability_rules AvailabilityRule[]
+  time_off           TimeOff[]
+  clients            Client[]
+  appointments       Appointment[]
+  quote_requests     QuoteRequest[]
+  notification_log   NotificationLog[]
+  google_connection  GoogleConnection?
+  pix_settings       PixSettings?
+
+  @@map("professionals")
+}
+
+model Service {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id     String   @db.Uuid
+  name                String
+  description         String?
+  duration_minutes    Int      @default(60)
+  price_cents         Int?
+  price_is_starting   Boolean  @default(false)
+  requires_quote      Boolean  @default(false)
+  requires_prepayment Boolean  @default(false)
+  active              Boolean  @default(true)
+  position            Int      @default(0)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  professional   Professional   @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  quote_requests QuoteRequest[]
+
+  @@index([professional_id, position])
+  @@map("services")
+}
+
+model Photo {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id String   @db.Uuid
+  image_url       String
+  caption         String?
+  position        Int      @default(0)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  professional Professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+
+  @@index([professional_id, position])
+  @@map("photos")
+}
+
+model AvailabilityRule {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id String   @db.Uuid
+  weekday         Int      @db.SmallInt
+  start_time      DateTime @db.Time(6)
+  end_time        DateTime @db.Time(6)
+
+  professional Professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+
+  @@index([professional_id, weekday, start_time])
+  @@map("availability_rules")
+}
+
+model TimeOff {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id String   @db.Uuid
+  starts_at       DateTime @db.Timestamptz(6)
+  ends_at         DateTime @db.Timestamptz(6)
+  reason          String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  professional Professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+
+  @@index([professional_id, ends_at])
+  @@map("time_off")
+}
+
+model Client {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id String   @db.Uuid
+  name            String
+  phone           String
+  email           String?
+  notes           String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  professional   Professional   @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  quote_requests QuoteRequest[]
+
+  @@unique([professional_id, phone])
+  @@map("clients")
+}
+
+model Appointment {
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id      String            @db.Uuid
+  client_id            String            @db.Uuid
+  service_id           String?           @db.Uuid
+  service_name         String
+  price_cents          Int?
+  starts_at            DateTime          @db.Timestamptz(6)
+  ends_at              DateTime          @db.Timestamptz(6)
+  status               AppointmentStatus @default(confirmed)
+  notes                String?
+  source               String            @default("online")
+  cancel_token         String            @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cancelled_at         DateTime?         @db.Timestamptz(6)
+  reminder_sent_at     DateTime?         @db.Timestamptz(6)
+  google_event_id      String?
+  payment_status       PaymentStatus     @default(not_required)
+  payment_amount_cents Int?
+  payment_provider     PixMode?
+  payment_provider_id  String?
+  payment_expires_at   DateTime?         @db.Timestamptz(6)
+  pix_copy_paste       String?
+  paid_at              DateTime?         @db.Timestamptz(6)
+  created_at           DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
+
+  professional     Professional      @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+  client           Client            @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  service          Service?          @relation(fields: [service_id], references: [id], onDelete: SetNull)
+  notification_log NotificationLog[]
+
+  @@unique([payment_provider, payment_provider_id])
+  @@index([professional_id, starts_at])
+  @@index([client_id, starts_at(sort: Desc)])
+  @@map("appointments")
+}
+
+model QuoteRequest {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id  String      @db.Uuid
+  client_id        String?     @db.Uuid
+  service_id       String?     @db.Uuid
+  service_name     String?
+  name             String
+  phone            String
+  email            String?
+  description      String
+  location         String?
+  preferred_period String?
+  status           QuoteStatus @default(new)
+  created_at       DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime    @default(now()) @updatedAt @db.Timestamptz(6)
+
+  professional     Professional      @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+  client           Client?           @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  service          Service?          @relation(fields: [service_id], references: [id], onDelete: SetNull)
+  notification_log NotificationLog[]
+
+  @@index([professional_id, created_at(sort: Desc)])
+  @@map("quote_requests")
+}
+
+model NotificationLog {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id String              @db.Uuid
+  appointment_id  String?             @db.Uuid
+  quote_id        String?             @db.Uuid
+  kind            String
+  channel         NotificationChannel
+  recipient       String?
+  status          NotificationStatus
+  provider_id     String?
+  error           String?
+  created_at      DateTime            @default(now()) @db.Timestamptz(6)
+
+  professional Professional  @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+  appointment  Appointment?  @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  quote        QuoteRequest? @relation(fields: [quote_id], references: [id], onDelete: Cascade)
+
+  @@index([professional_id, created_at(sort: Desc)])
+  @@map("notification_log")
+}
+
+/// Credenciais OAuth do Google (tokens criptografados pela aplicação).
+model GoogleConnection {
+  professional_id         String    @id @db.Uuid
+  google_email            String?
+  calendar_id             String    @default("primary")
+  refresh_token_enc       String
+  access_token_enc        String?
+  access_token_expires_at DateTime? @db.Timestamptz(6)
+  sync_busy               Boolean   @default(true)
+  create_events           Boolean   @default(true)
+  last_error              String?
+  last_error_at           DateTime? @db.Timestamptz(6)
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  professional Professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+
+  @@map("google_connections")
+}
+
+model PixSettings {
+  professional_id     String   @id @db.Uuid
+  enabled             Boolean  @default(false)
+  mode                PixMode  @default(manual)
+  pix_key             String?
+  merchant_name       String?
+  merchant_city       String?
+  mp_access_token_enc String?
+  deposit_percent     Int      @default(100)
+  hold_minutes        Int      @default(30)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  professional Professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+
+  @@map("pix_settings")
+}

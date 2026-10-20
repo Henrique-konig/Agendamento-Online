@@ -1,27 +1,53 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { fromZodError, type ActionState } from "@/lib/action-state";
-import { siteUrl } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { DUMMY_HASH, hashPassword, verifyPassword } from "@/lib/auth/password";
+import { createSession, destroySession } from "@/lib/auth/session";
+import { db } from "@/lib/db";
 import { safeNextPath, signInSchema, signUpSchema } from "./schemas";
+
+const WINDOW_MS = 15 * 60_000;
+const MAX_FAILS_PER_EMAIL = 5;
+const MAX_FAILS_PER_IP = 30;
+
+async function clientIp() {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || null;
+}
+
+/** Limita tentativas de senha por e-mail e por IP nos últimos 15 minutos. */
+async function tooManyAttempts(email: string, ip: string | null) {
+  const since = new Date(Date.now() - WINDOW_MS);
+  const [byEmail, byIp] = await Promise.all([
+    db.loginAttempt.count({ where: { email, success: false, created_at: { gte: since } } }),
+    ip
+      ? db.loginAttempt.count({ where: { ip, success: false, created_at: { gte: since } } })
+      : Promise.resolve(0),
+  ]);
+  return byEmail >= MAX_FAILS_PER_EMAIL || byIp >= MAX_FAILS_PER_IP;
+}
 
 export async function signIn(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = signInSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) {
-    return {
-      ok: false,
-      message:
-        error.code === "email_not_confirmed"
-          ? "Confirme seu e-mail antes de entrar."
-          : "E-mail ou senha incorretos.",
-    };
+  const email = parsed.data.email.toLowerCase();
+  const ip = await clientIp();
+
+  if (await tooManyAttempts(email, ip)) {
+    return { ok: false, message: "Muitas tentativas. Aguarde 15 minutos e tente de novo." };
   }
 
+  const user = await db.user.findUnique({ where: { email } });
+  // Sempre compara uma senha, mesmo sem usuário, para o tempo de resposta não revelar contas.
+  const valid = await verifyPassword(parsed.data.password, user?.password_hash ?? DUMMY_HASH);
+
+  await db.loginAttempt.create({ data: { email, ip, success: Boolean(user && valid) } });
+  if (!user || !valid) return { ok: false, message: "E-mail ou senha incorretos." };
+
+  await createSession(user.id);
   redirect(safeNextPath(formData.get("proximo")));
 }
 
@@ -29,30 +55,21 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
   const parsed = signUpSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    ...parsed.data,
-    options: { emailRedirectTo: siteUrl("/auth/confirmar?proximo=/painel/boas-vindas") },
-  });
-
-  if (error) {
-    return {
-      ok: false,
-      message:
-        error.code === "user_already_exists"
-          ? "Já existe uma conta com este e-mail."
-          : "Não foi possível criar a conta. Tente novamente.",
-    };
+  const email = parsed.data.email.toLowerCase();
+  if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
+    return { ok: false, message: "Já existe uma conta com este e-mail." };
   }
 
-  // Projetos sem confirmação de e-mail já retornam uma sessão.
-  if (data.session) redirect("/painel/boas-vindas");
+  const user = await db.user.create({
+    data: { email, password_hash: await hashPassword(parsed.data.password) },
+    select: { id: true },
+  });
 
-  return { ok: true, message: "Enviamos um link de confirmação para o seu e-mail." };
+  await createSession(user.id);
+  redirect("/painel/boas-vindas");
 }
 
 export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  await destroySession();
   redirect("/entrar");
 }

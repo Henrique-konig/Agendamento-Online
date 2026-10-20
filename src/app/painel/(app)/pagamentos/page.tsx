@@ -5,13 +5,12 @@ import { PixSettingsForm } from "@/features/payments/settings-form";
 import { getPixSettings } from "@/features/payments/settings";
 import { requireProfessional } from "@/lib/auth";
 import { integrationsEnv } from "@/lib/env";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = { title: "Pagamentos" };
 
 export default async function PaymentsPage() {
   const professional = await requireProfessional();
-  const settings = await getPixSettings(createAdminClient(), professional.id);
+  const settings = await getPixSettings(professional.id);
 
   return (
     <>

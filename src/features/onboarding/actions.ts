@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { fromZodError, type ActionState } from "@/lib/action-state";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { isPgError, PG } from "@/lib/db-errors";
 import { onboardingSchema } from "./schemas";
 
 export async function completeOnboarding(
@@ -14,17 +15,16 @@ export async function completeOnboarding(
   const parsed = onboardingSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("professionals").insert({ id: user.id, ...parsed.data });
-
-  if (error) {
-    if (error.code === "23505") {
+  try {
+    await db.professional.create({ data: { id: user.id, ...parsed.data } });
+  } catch (error) {
+    if (isPgError(error, PG.UNIQUE)) {
       return { ok: false, fieldErrors: { slug: ["Este endereço já está em uso."] } };
     }
-    if (error.code === "23514") {
+    if (isPgError(error, PG.CHECK)) {
       return { ok: false, fieldErrors: { slug: ["Este endereço não está disponível."] } };
     }
-    console.error("[onboarding] falha ao criar profissional", error.code, error.message);
+    console.error("[onboarding] falha ao criar profissional", error);
     return { ok: false, message: "Não foi possível salvar. Tente novamente." };
   }
 

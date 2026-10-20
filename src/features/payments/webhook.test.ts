@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/features/booking/notify", () => ({ emitBookingEvent: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
+vi.mock("@/lib/db", () => ({ db: {} }));
 
 const { extractPaymentId } = await import("./webhook");
 

@@ -5,7 +5,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireProfessional } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils/cn";
 import { AppointmentList } from "@/features/appointments/appointment-list";
 import { listAppointments } from "@/features/appointments/queries";
@@ -20,32 +20,22 @@ export default async function PainelHomePage() {
   const tz = professional.timezone;
   const today = instantToLocalDate(new Date(), tz);
 
-  const supabase = await createClient();
-  const [services, photos, todayAppointments, newQuotes, pendingCount] = await Promise.all([
-    supabase
-      .from("services")
-      .select("id", { count: "exact", head: true })
-      .eq("professional_id", professional.id),
-    supabase
-      .from("photos")
-      .select("id", { count: "exact", head: true })
-      .eq("professional_id", professional.id),
+  const [serviceCount, photoCount, todayAppointments, newQuotes, pendingCount] = await Promise.all([
+    db.service.count({ where: { professional_id: professional.id } }),
+    db.photo.count({ where: { professional_id: professional.id } }),
     listAppointments(
       professional.id,
       zonedToInstant(today, 0, tz),
       zonedToInstant(addDays(today, 1), 0, tz),
     ),
-    supabase
-      .from("quote_requests")
-      .select("id", { count: "exact", head: true })
-      .eq("professional_id", professional.id)
-      .eq("status", "new"),
-    supabase
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("professional_id", professional.id)
-      .eq("status", "pending")
-      .gte("starts_at", new Date().toISOString()),
+    db.quoteRequest.count({ where: { professional_id: professional.id, status: "new" } }),
+    db.appointment.count({
+      where: {
+        professional_id: professional.id,
+        status: "pending",
+        starts_at: { gte: new Date() },
+      },
+    }),
   ]);
 
   const activeToday = todayAppointments.filter(
@@ -53,8 +43,8 @@ export default async function PainelHomePage() {
   ).length;
   const stats = [
     { label: "Hoje", value: activeToday, hint: activeToday === 1 ? "atendimento" : "atendimentos" },
-    { label: "Aguardando", value: pendingCount.count ?? 0, hint: "para confirmar" },
-    { label: "Orçamentos", value: newQuotes.count ?? 0, hint: "novos pedidos" },
+    { label: "Aguardando", value: pendingCount, hint: "para confirmar" },
+    { label: "Orçamentos", value: newQuotes, hint: "novos pedidos" },
   ];
 
   const checklist = [
@@ -63,9 +53,9 @@ export default async function PainelHomePage() {
       label: "Complete seu perfil com apresentação e contato",
       href: "/painel/perfil",
     },
-    { done: (services.count ?? 0) > 0, label: "Cadastre seus serviços", href: "/painel/servicos" },
+    { done: serviceCount > 0, label: "Cadastre seus serviços", href: "/painel/servicos" },
     {
-      done: (photos.count ?? 0) > 0,
+      done: photoCount > 0,
       label: "Adicione fotos do seu trabalho",
       href: "/painel/fotos",
     },
@@ -109,9 +99,7 @@ export default async function PainelHomePage() {
         <Card>
           <CardHeader
             title="Hoje"
-            description={
-              newQuotes.count ? `${newQuotes.count} pedido(s) de orçamento novo(s).` : undefined
-            }
+            description={newQuotes ? `${newQuotes} pedido(s) de orçamento novo(s).` : undefined}
             action={
               <Link
                 href="/painel/agenda"

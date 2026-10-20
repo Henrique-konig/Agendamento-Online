@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fromZodError, type ActionState } from "@/lib/action-state";
 import { requireProfessional } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 import { emailField } from "@/features/booking/schemas";
 import { optionalText } from "@/lib/validation/fields";
 
@@ -21,13 +21,12 @@ export async function updateClient(_prev: ActionState, formData: FormData): Prom
   if (!parsed.success) return fromZodError(parsed.error);
 
   const { id, ...data } = parsed.data;
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("clients")
-    .update(data)
-    .eq("id", id)
-    .eq("professional_id", professional.id);
-  if (error) return { ok: false, message: "Não foi possível salvar." };
+  try {
+    await db.client.updateMany({ where: { id, professional_id: professional.id }, data });
+  } catch (error) {
+    console.error("[clients] falha ao salvar", error);
+    return { ok: false, message: "Não foi possível salvar." };
+  }
 
   revalidatePath(`/painel/clientes/${id}`);
   return { ok: true, message: "Cliente atualizado." };

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireProfessional } from "@/lib/auth";
 import { digits, formatPhoneBR } from "@/lib/format/contact";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -15,22 +15,29 @@ export default async function ClientsPage(props: PageProps<"/painel/clientes">) 
   const searchParams = await props.searchParams;
   const q = typeof searchParams.q === "string" ? searchParams.q.trim().slice(0, 60) : "";
 
-  const supabase = await createClient();
-  let query = supabase
-    .from("clients")
-    .select("id, name, phone, email, appointments(count)")
-    .eq("professional_id", professional.id)
-    .order("name")
-    .limit(200);
-  if (q) {
-    // Remove caracteres com significado na sintaxe de filtros do PostgREST.
-    const safe = q.replace(/[%,()*]/g, " ");
-    const phone = digits(q);
-    query = query.or(
-      phone.length >= 3 ? `name.ilike.%${safe}%,phone.like.%${phone}%` : `name.ilike.%${safe}%`,
-    );
-  }
-  const { data: clients } = await query;
+  const phone = digits(q);
+  const clients = await db.client.findMany({
+    where: {
+      professional_id: professional.id,
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              ...(phone.length >= 3 ? [{ phone: { contains: phone } }] : []),
+            ],
+          }
+        : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      _count: { select: { appointments: true } },
+    },
+    orderBy: { name: "asc" },
+    take: 200,
+  });
 
   return (
     <>
@@ -44,7 +51,7 @@ export default async function ClientsPage(props: PageProps<"/painel/clientes">) 
         />
       </form>
       <Card className="p-0">
-        {clients?.length ? (
+        {clients.length ? (
           <ul className="divide-y divide-ink-100">
             {clients.map((c) => (
               <li key={c.id}>
@@ -57,7 +64,7 @@ export default async function ClientsPage(props: PageProps<"/painel/clientes">) 
                     <span className="text-sm text-ink-500">{formatPhoneBR(c.phone)}</span>
                   </span>
                   <span className="text-xs text-ink-500">
-                    {c.appointments[0]?.count ?? 0} agendamento(s)
+                    {c._count.appointments} agendamento(s)
                   </span>
                 </Link>
               </li>

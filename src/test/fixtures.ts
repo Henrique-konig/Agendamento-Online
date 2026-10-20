@@ -1,7 +1,7 @@
-import type { Tables } from "@/types/database";
+import type { Professional, Service } from "@/types/models";
 
 /** Fábricas de dados para testes unitários. */
-export function makeProfessional(overrides: Partial<Tables<"professionals">> = {}) {
+export function makeProfessional(overrides: Partial<Professional> = {}): Professional {
   return {
     id: "00000000-0000-4000-8000-000000000001",
     slug: "barbearia-do-ze",
@@ -21,8 +21,8 @@ export function makeProfessional(overrides: Partial<Tables<"professionals">> = {
     postal_code: "90000000",
     service_area: null,
     show_address: true,
-    avatar_path: null,
-    cover_path: null,
+    avatar_url: null,
+    cover_url: null,
     booking_enabled: true,
     auto_confirm: true,
     slot_interval_minutes: 30,
@@ -33,13 +33,13 @@ export function makeProfessional(overrides: Partial<Tables<"professionals">> = {
     notify_new_booking: true,
     reminder_email: true,
     reminder_whatsapp: false,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
+    created_at: new Date("2026-01-01T00:00:00Z"),
+    updated_at: new Date("2026-01-01T00:00:00Z"),
     ...overrides,
-  } satisfies Tables<"professionals">;
+  };
 }
 
-export function makeService(overrides: Partial<Tables<"services">> = {}) {
+export function makeService(overrides: Partial<Service> = {}): Service {
   return {
     id: "00000000-0000-4000-8000-000000000010",
     professional_id: "00000000-0000-4000-8000-000000000001",
@@ -52,8 +52,8 @@ export function makeService(overrides: Partial<Tables<"services">> = {}) {
     requires_prepayment: false,
     active: true,
     position: 0,
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
+    created_at: new Date("2026-01-01T00:00:00Z"),
+    updated_at: new Date("2026-01-01T00:00:00Z"),
     ...overrides,
-  } satisfies Tables<"services">;
+  };
 }
