@@ -17,7 +17,14 @@ export function SignInForm({ next }: { next?: string }) {
       <FormMessage ok={state.ok} message={state.message} />
       <input type="hidden" name="proximo" value={next ?? "/painel"} />
       <Field label="E-mail" name="email" errors={errors.email}>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={state.values?.email}
+          required
+        />
       </Field>
       <Field label="Senha" name="password" errors={errors.password}>
         <Input
@@ -28,6 +35,14 @@ export function SignInForm({ next }: { next?: string }) {
           required
         />
       </Field>
+      <div className="-mt-2 text-right">
+        <Link
+          href="/esqueci-senha"
+          className="text-xs text-ink-500 hover:text-brand-700 hover:underline"
+        >
+          Esqueci minha senha
+        </Link>
+      </div>
       <SubmitButton className="w-full" pendingText="Entrando…">
         Entrar
       </SubmitButton>

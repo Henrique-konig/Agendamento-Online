@@ -70,6 +70,7 @@ model User {
   created_at    DateTime @default(now()) @db.Timestamptz(6)
 
   sessions     Session[]
+  reset_tokens PasswordResetToken[]
   professional Professional?
 
   @@map("users")
@@ -88,6 +89,20 @@ model Session {
   @@index([user_id])
   @@index([expires_at])
   @@map("sessions")
+}
+
+/// Link de "esqueci minha senha": guardamos só o hash; uso único (apagado ao usar).
+model PasswordResetToken {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  token_hash String   @unique
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@map("password_reset_tokens")
 }
 
 /// Tentativas de login recentes, para limitar força bruta.
