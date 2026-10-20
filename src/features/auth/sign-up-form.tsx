@@ -18,7 +18,14 @@ export function SignUpForm() {
     <form action={action} className="space-y-5" noValidate>
       <FormMessage ok={state.ok} message={state.message} />
       <Field label="E-mail" name="email" errors={errors.email}>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={state.values?.email}
+          required
+        />
       </Field>
       <Field label="Senha" name="password" hint="Mínimo de 8 caracteres." errors={errors.password}>
         <Input

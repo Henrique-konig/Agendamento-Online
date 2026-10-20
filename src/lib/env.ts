@@ -9,6 +9,11 @@ function format(error: z.ZodError) {
 }
 
 const integrationsSchema = z.object({
+  // E-mail: SMTP (Gmail, Brevo, SES...) tem prioridade; Resend por API é a alternativa.
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(3).default("Agenda Autônomo <nao-responda@example.com>"),
   CRON_SECRET: z.string().min(16).optional(),
@@ -29,6 +34,10 @@ export type IntegrationsEnv = z.infer<typeof integrationsSchema>;
 export function integrationsEnv(): IntegrationsEnv {
   const empty = (v: string | undefined) => (v ? v : undefined);
   const parsed = integrationsSchema.safeParse({
+    SMTP_HOST: empty(process.env.SMTP_HOST),
+    SMTP_PORT: empty(process.env.SMTP_PORT),
+    SMTP_USER: empty(process.env.SMTP_USER),
+    SMTP_PASSWORD: empty(process.env.SMTP_PASSWORD),
     RESEND_API_KEY: empty(process.env.RESEND_API_KEY),
     EMAIL_FROM: empty(process.env.EMAIL_FROM),
     CRON_SECRET: empty(process.env.CRON_SECRET),

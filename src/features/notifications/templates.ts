@@ -244,3 +244,19 @@ export function reminderWhatsAppParams(ctx: AppointmentContext) {
     ctx.manageUrl,
   ];
 }
+
+export function passwordResetEmail(input: {
+  link: string;
+  expiresInMinutes: number;
+}): RenderedEmail {
+  return {
+    subject: "Redefinir sua senha — Agenda Autônomo",
+    ...layout({
+      heading: "Redefinir senha",
+      intro: `Recebemos um pedido para trocar a senha da sua conta. O link vale por ${input.expiresInMinutes} minutos e só pode ser usado uma vez. Se não foi você, ignore este e-mail: sua senha continua a mesma.`,
+      details: [],
+      cta: { label: "Escolher nova senha", url: input.link },
+      footer: FOOTER,
+    }),
+  };
+}
