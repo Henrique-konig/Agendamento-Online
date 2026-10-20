@@ -4,11 +4,10 @@ import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { publicMediaUrl } from "@/lib/storage";
 import { addPhoto, deletePhoto, updatePhotoCaption } from "./actions";
 import { uploadImage } from "./image-upload";
 
-type Photo = { id: string; storage_path: string; caption: string | null };
+type Photo = { id: string; image_url: string; caption: string | null };
 
 export function GalleryManager({
   professionalId,
@@ -30,11 +29,11 @@ export function GalleryManager({
     startTransition(async () => {
       for (const file of files.slice(0, remaining)) {
         try {
-          const path = await uploadImage(file, professionalId, "foto");
-          const result = await addPhoto(path);
+          const url = await uploadImage(file, professionalId, "foto");
+          const result = await addPhoto(url);
           if (!result.ok || !result.id) throw new Error(result.message);
           const id = result.id;
-          setPhotos((prev) => [...prev, { id, storage_path: path, caption: null }]);
+          setPhotos((prev) => [...prev, { id, image_url: url, caption: null }]);
         } catch (e) {
           setError(e instanceof Error ? e.message : "Falha no envio.");
           break;
@@ -81,7 +80,7 @@ export function GalleryManager({
             <li key={photo.id} className="overflow-hidden rounded-xl bg-white ring-1 ring-ink-200">
               <div className="relative aspect-square bg-ink-100">
                 <Image
-                  src={publicMediaUrl(photo.storage_path) ?? ""}
+                  src={photo.image_url}
                   alt={photo.caption ?? ""}
                   fill
                   sizes="(min-width: 640px) 33vw, 50vw"

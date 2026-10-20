@@ -8,14 +8,14 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { initialActionState } from "@/lib/action-state";
 import { formatPhoneBR } from "@/lib/format/contact";
 import { UFS } from "@/lib/validation/fields";
-import type { Tables } from "@/types/database";
+import type { Professional } from "@/types/models";
 import { updateProfile } from "./actions";
 
 export function ProfileForm({
   professional,
   siteHost,
 }: {
-  professional: Tables<"professionals">;
+  professional: Professional;
   siteHost: string;
 }) {
   const [state, action] = useActionState(updateProfile, initialActionState);

@@ -49,7 +49,7 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
           <PixPayment
             copyPaste={appointment.pix_copy_paste!}
             amountCents={appointment.payment_amount_cents!}
-            expiresAt={appointment.payment_expires_at!}
+            expiresAt={appointment.payment_expires_at!.toISOString()}
             timeZone={professional.timezone}
             automatic={appointment.payment_provider === "mercadopago"}
           />

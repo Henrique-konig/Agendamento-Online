@@ -8,7 +8,7 @@ integradas em ordem.
 
 | Branch                           | Conteúdo                                                      | Parte de |
 | -------------------------------- | ------------------------------------------------------------- | -------- |
-| `feature/etapa-0-fundacao`       | Next.js, Supabase, autenticação, painel base, CI              | `main`   |
+| `feature/etapa-0-fundacao`       | Next.js, banco, autenticação, painel base, CI                 | `main`   |
 | `feature/etapa-1-pagina-publica` | Perfil, serviços, fotos, localização, SEO local               | etapa 0  |
 | `feature/etapa-2-agendamento`    | Disponibilidade, bloqueios, agendamento, orçamentos, clientes | etapa 1  |
 | `feature/etapa-3-lembretes`      | E-mail (Resend), WhatsApp, cron do dia anterior               | etapa 2  |
@@ -34,17 +34,19 @@ O mesmo conjunto roda no GitHub Actions (`.github/workflows/ci.yml`), junto
 com os testes de banco:
 
 ```bash
-# Aplica todas as migrations em um Postgres vazio e roda supabase/tests/*.sql
+# Aplica as migrations em um Postgres vazio e roda prisma/tests/*.sql
 DATABASE_URL=postgres://postgres@localhost:5432/postgres npm run test:db
 ```
 
 ## Banco de dados
 
-- Toda mudança de schema é uma nova migration em `supabase/migrations/`,
-  nomeada `AAAAMMDDHHMMSS_descricao.sql`. Nunca edite uma migration já integrada.
-- Toda tabela nova precisa de RLS habilitado e políticas explícitas, com teste
-  em `supabase/tests/` provando o isolamento entre profissionais.
-- Atualize `src/types/database.ts` (`npm run db:types`).
+- O esquema vive em `prisma/schema.prisma`. Toda mudança gera uma migration nova
+  (`npx prisma migrate dev --name descricao`). Nunca edite uma migration já integrada.
+- Regras que o Prisma não expressa (exclusão de sobreposição, CHECKs, gatilhos)
+  entram como SQL na própria migration, com teste em `prisma/tests/`.
+- **Não existe RLS.** Toda consulta de dados do painel precisa filtrar por
+  `professional_id` do usuário logado (`requireProfessional()`), e nenhum id de
+  profissional vem do navegador.
 
 ## Organização do código
 
@@ -53,12 +55,14 @@ src/
   app/          rotas (páginas, layouts, route handlers)
   components/   componentes de UI genéricos
   features/     módulos de domínio (actions, schemas, componentes)
-  lib/          infraestrutura: env, supabase, utilitários puros
-  types/        tipos do banco
-supabase/
+  lib/          infraestrutura: db, auth, env, utilitários puros
+  generated/    cliente Prisma (gerado, fora do Git)
+  types/        tipos de linha reexportados do Prisma
+prisma/
+  schema.prisma esquema do banco
   migrations/   SQL versionado
+  tests/        testes SQL das regras do banco
 ```
 
 Regras: lógica de negócio pura e testável em `lib/` ou `features/*/` (sem
-React); Server Actions validam a entrada com Zod e verificam o dono do dado;
-o cliente `admin` (service role) só é usado depois da validação.
+React); Server Actions validam a entrada com Zod e verificam o dono do dado.

@@ -2,7 +2,6 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { formatPhoneBR, whatsappLink } from "@/lib/format/contact";
 import { formatDuration, formatServicePrice } from "@/lib/format/money";
-import { publicMediaUrl } from "@/lib/storage";
 import type { PublicPage } from "./queries";
 import { fullAddress } from "./seo";
 
@@ -35,8 +34,8 @@ export function Hero({
   professional: Professional;
   actions: ReactNode;
 }) {
-  const cover = publicMediaUrl(p.cover_path);
-  const avatar = publicMediaUrl(p.avatar_path);
+  const cover = p.cover_url;
+  const avatar = p.avatar_url;
   const location = p.city ? [p.neighborhood, p.city].filter(Boolean).join(", ") : p.service_area;
 
   return (
@@ -113,7 +112,7 @@ export function Gallery({ photos }: { photos: PublicPage["photos"] }) {
           <figure className="overflow-hidden rounded-xl bg-ink-100">
             <div className="relative aspect-square">
               <Image
-                src={publicMediaUrl(photo.storage_path) ?? ""}
+                src={photo.image_url}
                 alt={photo.caption ?? ""}
                 fill
                 sizes="(min-width: 768px) 250px, 50vw"

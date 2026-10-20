@@ -9,7 +9,7 @@ import { listAppointments } from "@/features/appointments/queries";
 import { requireProfessional } from "@/lib/auth";
 import { capitalize, dateFormatters, localDateAnchor } from "@/lib/format/date";
 import { addDays, instantToLocalDate, isLocalDate, zonedToInstant } from "@/lib/scheduling/time";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -29,12 +29,13 @@ export default async function AgendaPage(props: PageProps<"/painel/agenda">) {
       zonedToInstant(day, 0, tz),
       zonedToInstant(addDays(day, 1), 0, tz),
     ),
-    (await createClient())
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("professional_id", professional.id)
-      .eq("status", "pending")
-      .gte("starts_at", new Date().toISOString()),
+    db.appointment.count({
+      where: {
+        professional_id: professional.id,
+        status: "pending",
+        starts_at: { gte: new Date() },
+      },
+    }),
   ]);
 
   const f = dateFormatters(tz);
@@ -46,11 +47,9 @@ export default async function AgendaPage(props: PageProps<"/painel/agenda">) {
         title="Agenda"
         actions={<LinkButton href={`/painel/agenda/novo?dia=${day}`}>Novo agendamento</LinkButton>}
       />
-      {pending.count ? (
+      {pending ? (
         <div className="mb-6">
-          <Alert tone="warning">
-            Você tem {pending.count} agendamento(s) aguardando confirmação.
-          </Alert>
+          <Alert tone="warning">Você tem {pending} agendamento(s) aguardando confirmação.</Alert>
         </div>
       ) : null}
       <Card>

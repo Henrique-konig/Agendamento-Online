@@ -1,19 +1,25 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 
-export async function listAppointments(professionalId: string, from: Date, to: Date) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("appointments")
-    .select(
-      "id, starts_at, ends_at, status, service_name, price_cents, notes, source, payment_status, payment_amount_cents, payment_provider, client:clients(id, name, phone)",
-    )
-    .eq("professional_id", professionalId)
-    .gte("starts_at", from.toISOString())
-    .lt("starts_at", to.toISOString())
-    .order("starts_at");
-  if (error) throw error;
-  return data;
+export function listAppointments(professionalId: string, from: Date, to: Date) {
+  return db.appointment.findMany({
+    where: { professional_id: professionalId, starts_at: { gte: from, lt: to } },
+    orderBy: { starts_at: "asc" },
+    select: {
+      id: true,
+      starts_at: true,
+      ends_at: true,
+      status: true,
+      service_name: true,
+      price_cents: true,
+      notes: true,
+      source: true,
+      payment_status: true,
+      payment_amount_cents: true,
+      payment_provider: true,
+      client: { select: { id: true, name: true, phone: true } },
+    },
+  });
 }
 
 export type AppointmentListItem = Awaited<ReturnType<typeof listAppointments>>[number];

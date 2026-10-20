@@ -5,7 +5,7 @@ import { z } from "zod";
 import { emailField } from "@/features/booking/schemas";
 import { fromZodError, type ActionState } from "@/lib/action-state";
 import { requireProfessional } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 import { checkbox } from "@/lib/validation/fields";
 
 const schema = z.object({
@@ -23,12 +23,12 @@ export async function saveNotificationSettings(
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("professionals")
-    .update(parsed.data)
-    .eq("id", professional.id);
-  if (error) return { ok: false, message: "Não foi possível salvar." };
+  try {
+    await db.professional.update({ where: { id: professional.id }, data: parsed.data });
+  } catch (error) {
+    console.error("[notificacoes] falha ao salvar", error);
+    return { ok: false, message: "Não foi possível salvar." };
+  }
 
   revalidatePath("/painel/notificacoes");
   return { ok: true, message: "Preferências salvas." };

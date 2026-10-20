@@ -7,7 +7,7 @@ import { quoteStatusLabel } from "@/features/quotes/schemas";
 import { requireProfessional } from "@/lib/auth";
 import { formatPhoneBR, whatsappLink } from "@/lib/format/contact";
 import { dateFormatters } from "@/lib/format/date";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = { title: "Orçamentos" };
@@ -16,13 +16,11 @@ const statuses = Object.entries(quoteStatusLabel) as Array<[keyof typeof quoteSt
 
 export default async function QuotesPage() {
   const professional = await requireProfessional();
-  const supabase = await createClient();
-  const { data: quotes } = await supabase
-    .from("quote_requests")
-    .select("*")
-    .eq("professional_id", professional.id)
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const quotes = await db.quoteRequest.findMany({
+    where: { professional_id: professional.id },
+    orderBy: { created_at: "desc" },
+    take: 100,
+  });
 
   const f = dateFormatters(professional.timezone);
 
@@ -32,7 +30,7 @@ export default async function QuotesPage() {
         title="Orçamentos"
         description="Pedidos de clientes para serviços que exigem avaliação."
       />
-      {quotes?.length ? (
+      {quotes.length ? (
         <div className="space-y-4">
           {quotes.map((q) => (
             <Card key={q.id} className={cn(q.status === "new" && "ring-2 ring-brand-500")}>

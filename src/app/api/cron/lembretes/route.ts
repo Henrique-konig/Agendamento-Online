@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { emitBookingEvent } from "@/features/booking/notify";
 import { runReminders } from "@/features/notifications/reminders";
 import { expireUnpaid } from "@/features/payments/expire";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { integrationsEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +24,7 @@ export async function GET(request: NextRequest) {
   if (!authorized(request)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
-  const expired = await expireUnpaid(createAdminClient());
+  const expired = await expireUnpaid();
   await Promise.all(
     expired.map((id) => emitBookingEvent({ type: "cancelled", appointmentId: id })),
   );

@@ -6,78 +6,77 @@ WhatsApp e caderno.
 
 ## Funcionalidades
 
-| Recurso                                                      | Etapa        |
-| ------------------------------------------------------------ | ------------ |
-| Cadastro, login e painel do profissional                     | 0 — Fundação |
-| Página pública com serviços, preços, fotos e localização     | 1            |
-| Agendamento só com horários livres + formulário de orçamento | 2            |
-| Painel de horários, bloqueios, agendamentos e clientes       | 2            |
-| Lembrete automático por e-mail/WhatsApp no dia anterior      | 3            |
-| Sincronização com Google Agenda                              | 4            |
-| Pagamento antecipado via Pix (opcional)                      | 5            |
+| Recurso                                                                            | Etapa        |
+| ---------------------------------------------------------------------------------- | ------------ |
+| Cadastro, login e painel do profissional                                           | 0 — Fundação |
+| Página pública com serviços, preços, fotos e localização                           | 1            |
+| Agendamento só com horários livres + formulário de orçamento                       | 2            |
+| Painel de horários, bloqueios, agendamentos e clientes                             | 2            |
+| Lembrete automático por e-mail/WhatsApp no dia anterior                            | 3            |
+| Sincronização com Google Agenda — [`docs/GOOGLE-AGENDA.md`](docs/GOOGLE-AGENDA.md) | 4            |
+| Pagamento antecipado via Pix (opcional) — [`docs/PIX.md`](docs/PIX.md)             | 5            |
 
 O roteiro completo está em [`docs/ROADMAP.md`](docs/ROADMAP.md) e a
 arquitetura em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
-
-## Deploy
-
-Pensado para a **Vercel** + **Supabase**:
-
-1. Crie o projeto no Supabase e aplique as migrations (`supabase db push`).
-2. Importe o repositório na Vercel e configure as variáveis de
-   `.env.example` (apenas as do Supabase são obrigatórias; cada integração
-   liga quando suas variáveis existem).
-3. `vercel.json` já agenda o cron de lembretes/expiração de Pix — defina
-   `CRON_SECRET`.
-4. No Supabase, em **Authentication → URL Configuration**, use a URL de
-   produção como _Site URL_ e adicione `/auth/confirmar` às Redirect URLs.
 
 ## Stack
 
 - **Next.js 16** (App Router, Server Actions, Turbopack) + **TypeScript**
 - **Tailwind CSS 4**
-- **Supabase** — Postgres, autenticação, Storage e Row Level Security
-- **Resend** (e-mail) e **WhatsApp Cloud API** para notificações — veja
-  [`docs/LEMBRETES.md`](docs/LEMBRETES.md)
-- **Zod** para validação de entrada
-- **Vitest** para testes unitários
+- **Neon** (Postgres serverless) com **Prisma 7**
+- **Login próprio** (senha com bcrypt, sessão em cookie httpOnly guardada no banco)
+- **Vercel Blob** para as fotos
+- **Resend** (e-mail) e **WhatsApp Cloud API** — [`docs/LEMBRETES.md`](docs/LEMBRETES.md)
+- **Zod** para validação de entrada, **Vitest** para testes
 
 ## Rodando localmente
 
-Requisitos: Node.js 20.9+ (veja `.nvmrc`) e um projeto Supabase.
+Requisitos: Node.js 20.9+ (veja `.nvmrc`) e um Postgres (um banco gratuito no
+[Neon](https://neon.tech) serve; Postgres local também).
 
 ```bash
-npm install
-cp .env.example .env.local   # preencha as chaves do Supabase
+npm install                  # também gera o cliente Prisma (postinstall)
+cp .env.example .env.local   # preencha DATABASE_URL
+npm run db:migrate           # aplica as migrations
 npm run dev
 ```
 
+As fotos usam o Vercel Blob: sem `BLOB_READ_WRITE_TOKEN` o envio de imagens
+não funciona em desenvolvimento (todo o resto funciona).
+
 ### Banco de dados
 
-As migrations ficam em `supabase/migrations/`, em ordem. Com o
-[Supabase CLI](https://supabase.com/docs/guides/cli):
+O esquema está em `prisma/schema.prisma` e as migrations em
+`prisma/migrations/`. Regras que o Prisma não expressa (sobreposição de
+horários, validações de formato, gatilhos) ficam em SQL dentro das migrations.
 
 ```bash
-supabase link --project-ref <seu-projeto>
-supabase db push        # aplica as migrations
-npm run db:types        # regenera src/types/database.ts
+npm run db:migrate    # aplica migrations pendentes (prisma migrate deploy)
+npm run db:generate   # regenera o cliente depois de mudar o schema
+npm run db:studio     # navegador de dados
 ```
 
-Sem o CLI, execute os arquivos `.sql` em ordem no SQL Editor do Supabase.
+Para criar uma migration nova: edite `prisma/schema.prisma` e rode
+`npx prisma migrate dev --name descricao` contra um banco de desenvolvimento.
 
-Em **Authentication → URL Configuration**, adicione
-`<NEXT_PUBLIC_SITE_URL>/auth/confirmar` às Redirect URLs.
+## Deploy (Vercel + Neon)
+
+Passo a passo em [`docs/DEPLOY.md`](docs/DEPLOY.md). Em resumo: conecte o Neon
+e o Blob pela aba **Storage** da Vercel (as variáveis entram sozinhas), defina
+`NEXT_PUBLIC_SITE_URL` e `CRON_SECRET`, e faça o deploy — as migrations rodam
+no build.
 
 ## Scripts
 
-| Comando             | O que faz                        |
-| ------------------- | -------------------------------- |
-| `npm run dev`       | Servidor de desenvolvimento      |
-| `npm run build`     | Build de produção                |
-| `npm run lint`      | ESLint                           |
-| `npm run typecheck` | Gera tipos de rotas e roda `tsc` |
-| `npm test`          | Testes unitários (Vitest)        |
-| `npm run format`    | Prettier                         |
+| Comando             | O que faz                                                    |
+| ------------------- | ------------------------------------------------------------ |
+| `npm run dev`       | Servidor de desenvolvimento                                  |
+| `npm run build`     | Build de produção                                            |
+| `npm run lint`      | ESLint                                                       |
+| `npm run typecheck` | Gera tipos de rotas e roda `tsc`                             |
+| `npm test`          | Testes unitários (Vitest)                                    |
+| `npm run test:db`   | Migrations + testes SQL das regras do banco (`DATABASE_URL`) |
+| `npm run format`    | Prettier                                                     |
 
 ## Fluxo de trabalho
 

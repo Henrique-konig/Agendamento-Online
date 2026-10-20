@@ -12,21 +12,29 @@ Agendador (cron) ──► /api/cron/* (lembretes, protegido por segredo)
 - **Multi-tenant por slug**: cada profissional é uma linha em
   `professionals` (mesmo `id` de `auth.users`) e tem uma URL pública
   `/<slug>`.
-- **Segurança em camadas**: o `proxy.ts` redireciona visitantes sem sessão
-  para fora do painel; as Server Actions conferem o usuário; e o banco aplica
-  **RLS** — um profissional só enxerga e altera os próprios dados.
+- **Segurança em camadas**: o `proxy.ts` redireciona visitantes sem cookie
+  para fora do painel; páginas e Server Actions validam a sessão no banco e
+  filtram tudo por `professional_id`; o banco garante as invariantes
+  (horários sem sobreposição, formatos).
 - **Visitantes não têm acesso direto a dados privados**. Ações públicas
   (reservar, pedir orçamento) passam por Server Actions que validam a entrada
-  com Zod e usam o cliente `admin` no servidor.
+  com Zod.
 
-## Clientes Supabase
+## Dados e autenticação
 
-| Arquivo                  | Uso                                                     |
-| ------------------------ | ------------------------------------------------------- |
-| `lib/supabase/server.ts` | Server Components/Actions com a sessão do usuário (RLS) |
-| `lib/supabase/client.ts` | Client Components (ex.: upload para o Storage)          |
-| `lib/supabase/admin.ts`  | Service role, só no servidor, após validação            |
-| `lib/supabase/proxy.ts`  | Renovação de sessão e proteção de rotas                 |
+| Arquivo                | Papel                                                                 |
+| ---------------------- | --------------------------------------------------------------------- |
+| `lib/db.ts`            | Cliente Prisma (adapter `pg`), criado no primeiro uso                 |
+| `lib/auth/session.ts`  | Sessão: token aleatório no cookie, hash SHA-256 no banco              |
+| `lib/auth/password.ts` | Senhas com bcrypt (custo 12)                                          |
+| `lib/auth.ts`          | `requireUser` / `requireProfessional` para páginas e Server Actions   |
+| `proxy.ts`             | Barreira leve: sem cookie de sessão, `/painel` redireciona para login |
+| `lib/db-errors.ts`     | Traduz erros do Postgres (23505 duplicado, 23P01 horário sobreposto)  |
+
+**Autorização:** sem RLS, é o código que isola os dados. Todo acesso do painel
+passa por `requireProfessional()` e filtra por `professional_id`. Ações
+públicas (reservar, pedir orçamento) validam a entrada com Zod e só tocam o
+profissional identificado pelo `slug`.
 
 ## Fuso horário
 

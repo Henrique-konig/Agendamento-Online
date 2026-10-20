@@ -1,6 +1,6 @@
-import type { Enums } from "@/types/database";
+import type { AppointmentStatus } from "@/types/models";
 
-export const appointmentStatusLabel: Record<Enums<"appointment_status">, string> = {
+export const appointmentStatusLabel: Record<AppointmentStatus, string> = {
   pending: "Aguardando confirmação",
   confirmed: "Confirmado",
   cancelled: "Cancelado",
@@ -8,7 +8,7 @@ export const appointmentStatusLabel: Record<Enums<"appointment_status">, string>
   no_show: "Não compareceu",
 };
 
-export const appointmentStatusTone: Record<Enums<"appointment_status">, string> = {
+export const appointmentStatusTone: Record<AppointmentStatus, string> = {
   pending: "bg-amber-50 text-amber-800 ring-amber-200",
   confirmed: "bg-brand-50 text-brand-800 ring-brand-200",
   cancelled: "bg-ink-100 text-ink-600 ring-ink-200",

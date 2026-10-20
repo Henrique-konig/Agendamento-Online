@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { SignUpForm } from "@/features/auth/sign-up-form";
+import { getUser } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Criar conta" };
 
-export default function SignUpPage() {
+export default async function SignUpPage() {
+  if (await getUser()) redirect("/painel");
   return (
     <>
       <h1 className="text-2xl font-semibold">Crie sua conta</h1>

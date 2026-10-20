@@ -15,7 +15,6 @@ import {
 import { localBusinessJsonLd, pageDescription } from "@/features/public-page/seo";
 import { whatsappLink } from "@/lib/format/contact";
 import { siteUrl } from "@/lib/env";
-import { publicMediaUrl } from "@/lib/storage";
 
 // A página é regenerada em segundo plano e também revalidada sob demanda
 // sempre que o profissional salva alterações no painel.
@@ -34,7 +33,7 @@ export async function generateMetadata(props: PageProps<"/[slug]">): Promise<Met
 
   const { professional: p } = page;
   const title = p.city ? `${p.display_name} — ${p.profession} em ${p.city}` : p.display_name;
-  const image = publicMediaUrl(p.cover_path) ?? publicMediaUrl(p.avatar_path);
+  const image = p.cover_url ?? p.avatar_url;
 
   return {
     title: { absolute: title },

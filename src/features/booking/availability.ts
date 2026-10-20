@@ -1,25 +1,24 @@
 import "server-only";
 import { after } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { expireUnpaid } from "@/features/payments/expire";
 import { computeAvailableSlots, isSlotAvailable, type SlotOptions } from "@/lib/scheduling/slots";
 import { addDays, instantToLocalDate, zonedToInstant } from "@/lib/scheduling/time";
-import type { Database, Tables } from "@/types/database";
+import { db } from "@/lib/db";
+import { timeColumnToString } from "@/lib/scheduling/time";
+import type { Professional, Service as ServiceRow } from "@/types/models";
 import { collectBusy } from "./busy";
 import { emitBookingEvent } from "./notify";
 
-type Professional = Tables<"professionals">;
-type Service = Pick<Tables<"services">, "duration_minutes">;
+type Service = Pick<ServiceRow, "duration_minutes">;
 
 /** Monta as opções de cálculo (regras + ocupados) para um profissional e serviço. */
 export async function loadSlotOptions(
-  supabase: SupabaseClient<Database>,
   professional: Professional,
   service: Service,
   now = new Date(),
 ): Promise<Omit<SlotOptions, "onlyDate">> {
   // Reservas com Pix vencido liberam o horário antes do cálculo.
-  const expired = await expireUnpaid(supabase, professional.id);
+  const expired = await expireUnpaid(professional.id);
   if (expired.length) {
     after(() =>
       Promise.all(expired.map((id) => emitBookingEvent({ type: "cancelled", appointmentId: id }))),
@@ -31,14 +30,18 @@ export async function loadSlotOptions(
   const from = zonedToInstant(today, 0, tz);
   const to = zonedToInstant(addDays(today, professional.max_days_ahead + 1), 0, tz);
 
-  const [{ data: rules, error }, busy] = await Promise.all([
-    supabase
-      .from("availability_rules")
-      .select("weekday, start_time, end_time")
-      .eq("professional_id", professional.id),
-    collectBusy(supabase, { professionalId: professional.id, from, to }),
+  const [ruleRows, busy] = await Promise.all([
+    db.availabilityRule.findMany({
+      where: { professional_id: professional.id },
+      select: { weekday: true, start_time: true, end_time: true },
+    }),
+    collectBusy({ professionalId: professional.id, from, to }),
   ]);
-  if (error) throw error;
+  const rules = ruleRows.map((r) => ({
+    weekday: r.weekday,
+    start_time: timeColumnToString(r.start_time),
+    end_time: timeColumnToString(r.end_time),
+  }));
 
   return {
     rules,
@@ -53,19 +56,10 @@ export async function loadSlotOptions(
   };
 }
 
-export async function getAvailableDays(
-  supabase: SupabaseClient<Database>,
-  professional: Professional,
-  service: Service,
-) {
-  return computeAvailableSlots(await loadSlotOptions(supabase, professional, service));
+export async function getAvailableDays(professional: Professional, service: Service) {
+  return computeAvailableSlots(await loadSlotOptions(professional, service));
 }
 
-export async function checkSlot(
-  supabase: SupabaseClient<Database>,
-  professional: Professional,
-  service: Service,
-  start: Date,
-) {
-  return isSlotAvailable(start, await loadSlotOptions(supabase, professional, service));
+export async function checkSlot(professional: Professional, service: Service, start: Date) {
+  return isSlotAvailable(start, await loadSlotOptions(professional, service));
 }

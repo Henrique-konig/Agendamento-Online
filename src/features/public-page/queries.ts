@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { createPublicClient } from "@/lib/supabase/public";
+import { db } from "@/lib/db";
 import { isValidSlug } from "@/lib/utils/slug";
 
 /** Dados da página pública de um profissional publicado (null se não existir). */
@@ -8,42 +8,32 @@ export const getPublicPage = cache(async (slug: string) => {
   const normalized = slug.toLowerCase();
   if (!isValidSlug(normalized)) return null;
 
-  const supabase = createPublicClient();
-  const { data: professional } = await supabase
-    .from("professionals")
-    .select("*")
-    .eq("slug", normalized)
-    .eq("published", true)
-    .maybeSingle();
+  const professional = await db.professional.findFirst({
+    where: { slug: normalized, published: true },
+  });
   if (!professional) return null;
 
   const [services, photos] = await Promise.all([
-    supabase
-      .from("services")
-      .select("*")
-      .eq("professional_id", professional.id)
-      .eq("active", true)
-      .order("position")
-      .order("created_at"),
-    supabase
-      .from("photos")
-      .select("id, storage_path, caption")
-      .eq("professional_id", professional.id)
-      .order("position")
-      .order("created_at"),
+    db.service.findMany({
+      where: { professional_id: professional.id, active: true },
+      orderBy: [{ position: "asc" }, { created_at: "asc" }],
+    }),
+    db.photo.findMany({
+      where: { professional_id: professional.id },
+      orderBy: [{ position: "asc" }, { created_at: "asc" }],
+      select: { id: true, image_url: true, caption: true },
+    }),
   ]);
 
-  return { professional, services: services.data ?? [], photos: photos.data ?? [] };
+  return { professional, services, photos };
 });
 
 export type PublicPage = NonNullable<Awaited<ReturnType<typeof getPublicPage>>>;
 
 export async function listPublishedSlugs() {
-  const supabase = createPublicClient();
-  const { data } = await supabase
-    .from("professionals")
-    .select("slug, updated_at")
-    .eq("published", true)
-    .limit(5000);
-  return data ?? [];
+  return db.professional.findMany({
+    where: { published: true },
+    select: { slug: true, updated_at: true },
+    take: 5000,
+  });
 }

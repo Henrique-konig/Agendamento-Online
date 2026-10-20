@@ -6,19 +6,16 @@ import { TimeOffForm } from "@/features/schedule/time-off-form";
 import { requireProfessional } from "@/lib/auth";
 import { capitalize, dateFormatters } from "@/lib/format/date";
 import { instantToLocalDate } from "@/lib/scheduling/time";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Bloqueios" };
 
 export default async function TimeOffPage() {
   const professional = await requireProfessional();
-  const supabase = await createClient();
-  const { data: blocks } = await supabase
-    .from("time_off")
-    .select("*")
-    .eq("professional_id", professional.id)
-    .gt("ends_at", new Date().toISOString())
-    .order("starts_at");
+  const blocks = await db.timeOff.findMany({
+    where: { professional_id: professional.id, ends_at: { gt: new Date() } },
+    orderBy: { starts_at: "asc" },
+  });
 
   const f = dateFormatters(professional.timezone);
   const today = instantToLocalDate(new Date(), professional.timezone);
@@ -30,7 +27,7 @@ export default async function TimeOffPage() {
         <TimeOffForm today={today} />
         <Card>
           <CardHeader title="Próximos bloqueios" />
-          {blocks?.length ? (
+          {blocks.length ? (
             <ul className="divide-y divide-ink-100">
               {blocks.map((b) => (
                 <li key={b.id} className="flex items-center justify-between gap-4 py-3">

@@ -2,8 +2,8 @@ import type { CalendarEvent } from "@/lib/calendar/links";
 
 type AppointmentLike = {
   id: string;
-  starts_at: string;
-  ends_at: string;
+  starts_at: Date | string;
+  ends_at: Date | string;
   service_name: string;
   professional: {
     display_name: string;

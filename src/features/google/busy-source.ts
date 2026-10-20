@@ -7,9 +7,8 @@ import { withGoogle } from "./connection";
  * Horários ocupados na Google Agenda do profissional. Se o Google estiver
  * indisponível, a agenda continua funcionando só com os dados locais.
  */
-export const googleBusySource: BusySource = async (supabase, range) => {
+export const googleBusySource: BusySource = async (range) => {
   const busy = await withGoogle(
-    supabase,
     range.professionalId,
     ({ accessToken, connection }) =>
       queryFreeBusy(accessToken, connection.calendar_id, range.from, range.to),

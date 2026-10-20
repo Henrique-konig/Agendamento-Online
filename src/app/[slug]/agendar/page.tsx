@@ -9,7 +9,6 @@ import { PublicShell } from "@/features/public-page/public-shell";
 import { depositAmountCents } from "@/features/payments/amount";
 import { getPixSettings, isPixReady } from "@/features/payments/settings";
 import { formatBRL, formatDuration, formatServicePrice } from "@/lib/format/money";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function generateMetadata(props: PageProps<"/[slug]/agendar">): Promise<Metadata> {
   const { slug } = await props.params;
@@ -62,10 +61,9 @@ export default async function BookingPage(props: PageProps<"/[slug]/agendar">) {
     );
   }
 
-  const admin = createAdminClient();
   const [days, pix] = await Promise.all([
-    getAvailableDays(admin, professional, service),
-    service.requires_prepayment ? getPixSettings(admin, professional.id) : null,
+    getAvailableDays(professional, service),
+    service.requires_prepayment ? getPixSettings(professional.id) : null,
   ]);
   const deposit =
     isPixReady(pix) && service.price_cents

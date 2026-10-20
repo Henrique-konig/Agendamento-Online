@@ -1,5 +1,4 @@
 import { formatDuration } from "@/lib/format/money";
-import { publicMediaUrl } from "@/lib/storage";
 import type { PublicPage } from "./queries";
 
 type Professional = PublicPage["professional"];
@@ -24,7 +23,7 @@ export function pageDescription(page: PublicPage) {
 /** Dados estruturados schema.org para SEO local. */
 export function localBusinessJsonLd(page: PublicPage, url: string) {
   const { professional: p, services } = page;
-  const image = publicMediaUrl(p.cover_path) ?? publicMediaUrl(p.avatar_path);
+  const image = p.cover_url ?? p.avatar_url;
 
   return {
     "@context": "https://schema.org",

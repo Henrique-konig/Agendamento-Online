@@ -3,19 +3,18 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ScheduleSettingsForm } from "@/features/schedule/settings-form";
 import { WeeklyEditor } from "@/features/schedule/weekly-editor";
 import { requireProfessional } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { timeColumnToString } from "@/lib/scheduling/time";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Horários" };
 
 export default async function SchedulePage() {
   const professional = await requireProfessional();
-  const supabase = await createClient();
-  const { data: rules } = await supabase
-    .from("availability_rules")
-    .select("weekday, start_time, end_time")
-    .eq("professional_id", professional.id)
-    .order("weekday")
-    .order("start_time");
+  const rules = await db.availabilityRule.findMany({
+    where: { professional_id: professional.id },
+    select: { weekday: true, start_time: true, end_time: true },
+    orderBy: [{ weekday: "asc" }, { start_time: "asc" }],
+  });
 
   return (
     <>
@@ -25,10 +24,10 @@ export default async function SchedulePage() {
       />
       <div className="space-y-6">
         <WeeklyEditor
-          initialRules={(rules ?? []).map((r) => ({
+          initialRules={rules.map((r) => ({
             weekday: r.weekday,
-            start_time: r.start_time.slice(0, 5),
-            end_time: r.end_time.slice(0, 5),
+            start_time: timeColumnToString(r.start_time),
+            end_time: timeColumnToString(r.end_time),
           }))}
         />
         <ScheduleSettingsForm professional={professional} />

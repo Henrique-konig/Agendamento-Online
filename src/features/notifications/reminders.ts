@@ -1,5 +1,5 @@
 import "server-only";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
 import { sendReminder } from "./dispatch";
 import { isDueForReminder } from "./schedule";
 
@@ -12,35 +12,35 @@ export type ReminderRunResult = { checked: number; sent: number; failed: number 
  * concorrentes nunca enviam em dobro.
  */
 export async function runReminders(now = new Date()): Promise<ReminderRunResult> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("appointments")
-    .select("id, starts_at, professional:professionals(timezone)")
-    .eq("status", "confirmed")
-    .is("reminder_sent_at", null)
-    .gt("starts_at", now.toISOString())
-    .lt("starts_at", new Date(now.getTime() + 48 * 3600_000).toISOString())
-    .limit(500);
-  if (error) throw error;
+  const rows = await db.appointment.findMany({
+    where: {
+      status: "confirmed",
+      reminder_sent_at: null,
+      starts_at: { gt: now, lt: new Date(now.getTime() + 48 * 3600_000) },
+    },
+    select: { id: true, starts_at: true, professional: { select: { timezone: true } } },
+    take: 500,
+  });
 
-  const due = data.filter(
-    (a) => a.professional && isDueForReminder({ ...a, timezone: a.professional.timezone }, now),
+  const due = rows.filter((a) =>
+    isDueForReminder(
+      { id: a.id, starts_at: a.starts_at.toISOString(), timezone: a.professional.timezone },
+      now,
+    ),
   );
 
   let sent = 0;
   let failed = 0;
   for (const appointment of due) {
-    const { data: claimed } = await admin
-      .from("appointments")
-      .update({ reminder_sent_at: now.toISOString() })
-      .eq("id", appointment.id)
-      .is("reminder_sent_at", null)
-      .select("id")
-      .maybeSingle();
-    if (!claimed) continue;
+    // Reivindica o envio: só quem muda reminder_sent_at de nulo para agora envia.
+    const claimed = await db.appointment.updateMany({
+      where: { id: appointment.id, reminder_sent_at: null },
+      data: { reminder_sent_at: now },
+    });
+    if (claimed.count === 0) continue;
 
     try {
-      await sendReminder(admin, appointment.id);
+      await sendReminder(appointment.id);
       sent++;
     } catch (e) {
       failed++;
@@ -48,5 +48,5 @@ export async function runReminders(now = new Date()): Promise<ReminderRunResult>
     }
   }
 
-  return { checked: data.length, sent, failed };
+  return { checked: rows.length, sent, failed };
 }

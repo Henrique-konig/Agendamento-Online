@@ -9,7 +9,7 @@ import { requireProfessional } from "@/lib/auth";
 import { encrypt } from "@/lib/crypto/secretbox";
 import { integrationsEnv } from "@/lib/env";
 import { MercadoPagoError, verifyToken } from "@/lib/pix/mercadopago";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
 import { checkbox, optionalText } from "@/lib/validation/fields";
 import { markAppointmentPaid } from "./charge";
 
@@ -41,12 +41,10 @@ export async function savePixSettings(
   if (!parsed.success) return fromZodError(parsed.error);
   const { mp_access_token, ...values } = parsed.data;
 
-  const admin = createAdminClient();
-  const { data: current } = await admin
-    .from("pix_settings")
-    .select("mp_access_token_enc")
-    .eq("professional_id", professional.id)
-    .maybeSingle();
+  const current = await db.pixSettings.findUnique({
+    where: { professional_id: professional.id },
+    select: { mp_access_token_enc: true },
+  });
 
   let tokenEnc = current?.mp_access_token_enc ?? null;
   if (mp_access_token) {
@@ -68,12 +66,17 @@ export async function savePixSettings(
     return { ok: false, fieldErrors: { mp_access_token: ["Informe o token de acesso."] } };
   }
 
-  const { error } = await admin.from("pix_settings").upsert({
-    professional_id: professional.id,
-    ...values,
-    mp_access_token_enc: tokenEnc,
-  });
-  if (error) return { ok: false, message: "Não foi possível salvar." };
+  const data = { ...values, mp_access_token_enc: tokenEnc };
+  try {
+    await db.pixSettings.upsert({
+      where: { professional_id: professional.id },
+      create: { professional_id: professional.id, ...data },
+      update: data,
+    });
+  } catch (error) {
+    console.error("[pix] falha ao salvar configurações", error);
+    return { ok: false, message: "Não foi possível salvar." };
+  }
 
   revalidatePath("/painel/pagamentos");
   return { ok: true, message: "Configurações de Pix salvas." };
@@ -83,17 +86,14 @@ export async function savePixSettings(
 export async function confirmPixPayment(formData: FormData) {
   const professional = await requireProfessional();
   const id = z.uuid().parse(formData.get("id"));
-  const admin = createAdminClient();
 
-  const { data: appointment } = await admin
-    .from("appointments")
-    .select("id")
-    .eq("id", id)
-    .eq("professional_id", professional.id)
-    .maybeSingle();
+  const appointment = await db.appointment.findFirst({
+    where: { id, professional_id: professional.id },
+    select: { id: true },
+  });
   if (!appointment) return;
 
-  if (await markAppointmentPaid(admin, appointment.id)) {
+  if (await markAppointmentPaid(appointment.id)) {
     after(() => emitBookingEvent({ type: "paid", appointmentId: appointment.id }));
   }
   revalidatePath("/painel", "layout");

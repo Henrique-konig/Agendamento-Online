@@ -1,19 +1,13 @@
 import "server-only";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto/secretbox";
 import { integrationsEnv } from "@/lib/env";
-import type { Database, Tables } from "@/types/database";
+import type { PixSettings } from "@/types/models";
 
-type Admin = SupabaseClient<Database>;
-export type PixSettings = Tables<"pix_settings">;
+export type { PixSettings };
 
-export async function getPixSettings(admin: Admin, professionalId: string) {
-  const { data } = await admin
-    .from("pix_settings")
-    .select("*")
-    .eq("professional_id", professionalId)
-    .maybeSingle();
-  return data;
+export function getPixSettings(professionalId: string) {
+  return db.pixSettings.findUnique({ where: { professional_id: professionalId } });
 }
 
 /** Pix pronto para cobrar: habilitado e com os dados do modo escolhido. */

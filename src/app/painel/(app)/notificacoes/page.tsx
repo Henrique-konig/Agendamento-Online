@@ -6,7 +6,7 @@ import { getUser, requireProfessional } from "@/lib/auth";
 import { integrationsEnv } from "@/lib/env";
 import { dateFormatters } from "@/lib/format/date";
 import { isWhatsAppConfigured } from "@/lib/notifications/whatsapp";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = { title: "Notificações" };
@@ -30,13 +30,11 @@ const statusLabel = { sent: "Enviado", failed: "Falhou", skipped: "Não enviado"
 
 export default async function NotificationsPage() {
   const [professional, user] = await Promise.all([requireProfessional(), getUser()]);
-  const supabase = await createClient();
-  const { data: log } = await supabase
-    .from("notification_log")
-    .select("*")
-    .eq("professional_id", professional.id)
-    .order("created_at", { ascending: false })
-    .limit(30);
+  const log = await db.notificationLog.findMany({
+    where: { professional_id: professional.id },
+    orderBy: { created_at: "desc" },
+    take: 30,
+  });
   const f = dateFormatters(professional.timezone);
 
   return (
@@ -54,7 +52,7 @@ export default async function NotificationsPage() {
         />
         <Card>
           <CardHeader title="Últimos envios" />
-          {log?.length ? (
+          {log.length ? (
             <ul className="divide-y divide-ink-100 text-sm">
               {log.map((entry) => (
                 <li
