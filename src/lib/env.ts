@@ -21,12 +21,24 @@ function format(error: z.ZodError) {
   return error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
 }
 
+/**
+ * Chave pública do Supabase. Aceita o nome da integração Vercel + Supabase
+ * (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, chave nova sb_publishable_) e o nome
+ * clássico (NEXT_PUBLIC_SUPABASE_ANON_KEY). Referências explícitas para o Next
+ * embutir as variáveis no bundle do cliente.
+ */
+export function supabasePublicKey() {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+}
+
 export function publicEnv(): PublicEnv {
   // Referências explícitas para o Next embutir as variáveis no bundle do cliente.
   const parsed = publicSchema.safeParse({
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: supabasePublicKey(),
   });
   if (!parsed.success) throw new Error(`Variáveis de ambiente inválidas: ${format(parsed.error)}`);
   return parsed.data;
@@ -36,7 +48,8 @@ export function serverEnv(): ServerEnv {
   if (typeof window !== "undefined") throw new Error("serverEnv() só pode rodar no servidor");
   const parsed = serverSchema.safeParse({
     ...publicEnv(),
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    SUPABASE_SERVICE_ROLE_KEY:
+      process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
   if (!parsed.success) throw new Error(`Variáveis de ambiente inválidas: ${format(parsed.error)}`);
   return parsed.data;

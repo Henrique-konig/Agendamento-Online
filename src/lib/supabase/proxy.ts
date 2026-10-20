@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabasePublicKey } from "@/lib/env";
 import type { Database } from "@/types/database";
 
 const PROTECTED_PREFIXES = ["/painel"];
@@ -10,7 +11,7 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = supabasePublicKey();
   if (!url || !key) return response;
 
   const supabase = createServerClient<Database>(url, key, {
