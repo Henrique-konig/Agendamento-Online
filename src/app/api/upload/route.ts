@@ -29,6 +29,8 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
+    // O motivo fica no log da Vercel (a resposta ao navegador é genérica de propósito).
+    console.error("[upload] recusado", error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Falha no envio" },
       { status: 400 },
