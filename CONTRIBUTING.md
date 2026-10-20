@@ -30,13 +30,20 @@ Usamos [Conventional Commits](https://www.conventionalcommits.org/pt-br/):
 npm run lint && npm run typecheck && npm run format:check && npm test && npm run build
 ```
 
-O mesmo conjunto roda no GitHub Actions (`.github/workflows/ci.yml`).
+O mesmo conjunto roda no GitHub Actions (`.github/workflows/ci.yml`), junto
+com os testes de banco:
+
+```bash
+# Aplica todas as migrations em um Postgres vazio e roda supabase/tests/*.sql
+DATABASE_URL=postgres://postgres@localhost:5432/postgres npm run test:db
+```
 
 ## Banco de dados
 
 - Toda mudança de schema é uma nova migration em `supabase/migrations/`,
   nomeada `AAAAMMDDHHMMSS_descricao.sql`. Nunca edite uma migration já integrada.
-- Toda tabela nova precisa de RLS habilitado e políticas explícitas.
+- Toda tabela nova precisa de RLS habilitado e políticas explícitas, com teste
+  em `supabase/tests/` provando o isolamento entre profissionais.
 - Atualize `src/types/database.ts` (`npm run db:types`).
 
 ## Organização do código

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { buttonClasses } from "@/components/ui/button";
@@ -59,6 +60,19 @@ export default async function PublicProfilePage(props: PageProps<"/[slug]">) {
   const hasAddress = p.show_address && Boolean(p.address_line || p.city);
   const jsonLd = localBusinessJsonLd(page, siteUrl(`/${p.slug}`));
 
+  const canBook = p.booking_enabled && services.some((s) => !s.requires_quote);
+  const hasQuote = services.some((s) => s.requires_quote);
+
+  const bookingCta = canBook ? (
+    <Link href={`/${p.slug}/agendar`} className={buttonClasses("primary", "lg")}>
+      Agendar horário
+    </Link>
+  ) : hasQuote ? (
+    <Link href={`/${p.slug}/orcamento`} className={buttonClasses("primary", "lg")}>
+      Pedir orçamento
+    </Link>
+  ) : null;
+
   const whatsappCta = p.whatsapp ? (
     <a
       href={whatsappLink(
@@ -80,12 +94,39 @@ export default async function PublicProfilePage(props: PageProps<"/[slug]">) {
         // JSON.stringify escapa aspas; "<" é escapado para evitar fechamento de tag.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <Hero professional={p} actions={whatsappCta} />
+      <Hero
+        professional={p}
+        actions={
+          <>
+            {bookingCta}
+            {whatsappCta}
+          </>
+        }
+      />
 
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-12 px-4 py-10 sm:px-6">
         {services.length ? (
           <Section id="servicos" title="Serviços">
-            <ServiceList services={services} />
+            <ServiceList
+              services={services}
+              renderAction={(s) =>
+                s.requires_quote ? (
+                  <Link
+                    href={`/${p.slug}/orcamento?servico=${s.id}`}
+                    className={buttonClasses("secondary", "sm")}
+                  >
+                    Pedir orçamento
+                  </Link>
+                ) : p.booking_enabled ? (
+                  <Link
+                    href={`/${p.slug}/agendar?servico=${s.id}`}
+                    className={buttonClasses("primary", "sm")}
+                  >
+                    Agendar
+                  </Link>
+                ) : null
+              }
+            />
           </Section>
         ) : null}
 
