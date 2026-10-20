@@ -29,10 +29,11 @@ Integrações opcionais (Resend, Google, Pix) estão no `.env.example`.
 
 ## 4. Deploy
 
-O script `vercel-build` roda `prisma migrate deploy` antes do `next build`:
-cada deploy aplica as migrations pendentes no banco do ambiente. Para deploys
-de preview, use branches do Neon (a integração oferece isso) em vez de apontar
-previews para o banco de produção.
+O script `vercel-build` (`scripts/vercel-build.mjs`) roda `prisma migrate deploy`
+**somente em produção**, antes do `next build`. Se a produção não tiver banco
+configurado, o build falha com uma mensagem clara. Previews apenas buildam: uma
+branch com migration nova nunca altera o banco de produção. Para previews com
+banco próprio, use branches do Neon (a integração oferece isso).
 
 ## 5. Primeiro acesso
 
