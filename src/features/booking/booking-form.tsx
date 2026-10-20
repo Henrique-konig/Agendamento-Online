@@ -70,7 +70,7 @@ export function BookingForm({ slug, serviceId, timeZone, days, prepayment }: Pro
                   setSlot(null);
                 }}
                 className={cn(
-                  "flex w-16 shrink-0 flex-col items-center rounded-xl py-2 text-sm ring-1 transition-colors",
+                  "flex w-16 shrink-0 flex-col items-center rounded-xl py-2 text-sm ring-1 transition-all duration-200 active:scale-95",
                   active
                     ? "bg-brand-600 text-white ring-brand-600"
                     : "bg-white text-ink-800 ring-ink-200 hover:ring-brand-400",
@@ -99,10 +99,10 @@ export function BookingForm({ slug, serviceId, timeZone, days, prepayment }: Pro
                 aria-pressed={slot === s}
                 onClick={() => setSlot(s)}
                 className={cn(
-                  "rounded-lg py-2 text-sm font-medium ring-1 transition-colors",
+                  "rounded-lg py-2 font-mono text-sm ring-1 transition-all duration-200 active:scale-95",
                   slot === s
-                    ? "bg-brand-600 text-white ring-brand-600"
-                    : "bg-white text-ink-800 ring-ink-200 hover:ring-brand-400",
+                    ? "bg-amber-400 font-semibold text-ink-900 shadow-soft ring-amber-400"
+                    : "bg-amber-50 text-amber-800 ring-amber-200 hover:bg-amber-100",
                 )}
               >
                 {f.time(s)}

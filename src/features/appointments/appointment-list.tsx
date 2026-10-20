@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { confirmPixPayment } from "@/features/payments/actions";
 import { formatBRL } from "@/lib/format/money";
+import { EmptyState } from "@/components/ui/empty-state";
 import { updateAppointmentStatus } from "./actions";
 import type { AppointmentListItem } from "./queries";
 import { appointmentStatusLabel, appointmentStatusTone } from "@/features/booking/status";
@@ -14,7 +15,13 @@ export function AppointmentList({ appointments, timeZone, now = new Date() }: Pr
   const f = dateFormatters(timeZone);
 
   if (!appointments.length) {
-    return <p className="py-8 text-center text-sm text-ink-500">Nenhum agendamento.</p>;
+    return (
+      <EmptyState
+        icon="calendar"
+        title="Nenhum agendamento por aqui"
+        text="Quando um cliente marcar, o horário aparece nesta lista."
+      />
+    );
   }
 
   return (
@@ -24,9 +31,24 @@ export function AppointmentList({ appointments, timeZone, now = new Date() }: Pr
         const active = a.status === "pending" || a.status === "confirmed";
         return (
           <li key={a.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start">
-            <div className="w-24 shrink-0">
-              <p className="font-semibold text-ink-900 tabular-nums">{f.time(a.starts_at)}</p>
-              <p className="text-xs text-ink-500 tabular-nums">até {f.time(a.ends_at)}</p>
+            <div className="flex w-24 shrink-0 items-start gap-2.5">
+              <span
+                aria-hidden
+                className={cn(
+                  "mt-2 size-2 shrink-0 rounded-full",
+                  a.status === "pending"
+                    ? "bg-amber-400"
+                    : a.status === "confirmed"
+                      ? "bg-brand-500"
+                      : "bg-ink-300",
+                )}
+              />
+              <div>
+                <p className="font-mono text-base font-semibold text-ink-900 tabular-nums">
+                  {f.time(a.starts_at)}
+                </p>
+                <p className="font-mono text-xs text-ink-400 tabular-nums">{f.time(a.ends_at)}</p>
+              </div>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
