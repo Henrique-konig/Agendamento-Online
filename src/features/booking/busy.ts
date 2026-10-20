@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Interval } from "@/lib/scheduling/slots";
 import type { Database } from "@/types/database";
+import { googleBusySource } from "@/features/google/busy-source";
 
 export type BusyRange = { professionalId: string; from: Date; to: Date };
 
@@ -37,7 +38,7 @@ export const timeOffSource: BusySource = async (supabase, { professionalId, from
   return data.map((t) => ({ start: new Date(t.starts_at), end: new Date(t.ends_at) }));
 };
 
-export const busySources: BusySource[] = [appointmentsSource, timeOffSource];
+export const busySources: BusySource[] = [appointmentsSource, timeOffSource, googleBusySource];
 
 export async function collectBusy(supabase: SupabaseClient<Database>, range: BusyRange) {
   const results = await Promise.all(busySources.map((source) => source(supabase, range)));

@@ -248,6 +248,7 @@ export type Database = {
           cancel_token: string;
           cancelled_at: string | null;
           reminder_sent_at: string | null;
+          google_event_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -266,6 +267,7 @@ export type Database = {
           cancel_token?: string;
           cancelled_at?: string | null;
           reminder_sent_at?: string | null;
+          google_event_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -385,6 +387,46 @@ export type Database = {
             foreignKeyName: "notification_log_professional_id_fkey";
             columns: ["professional_id"];
             isOneToOne: false;
+            referencedRelation: "professionals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      google_connections: {
+        Row: {
+          professional_id: string;
+          google_email: string | null;
+          calendar_id: string;
+          refresh_token_enc: string;
+          access_token_enc: string | null;
+          access_token_expires_at: string | null;
+          sync_busy: boolean;
+          create_events: boolean;
+          last_error: string | null;
+          last_error_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          professional_id: string;
+          google_email?: string | null;
+          calendar_id?: string;
+          refresh_token_enc: string;
+          access_token_enc?: string | null;
+          access_token_expires_at?: string | null;
+          sync_busy?: boolean;
+          create_events?: boolean;
+          last_error?: string | null;
+          last_error_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["google_connections"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "google_connections_professional_id_fkey";
+            columns: ["professional_id"];
+            isOneToOne: true;
             referencedRelation: "professionals";
             referencedColumns: ["id"];
           },
