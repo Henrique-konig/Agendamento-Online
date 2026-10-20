@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import { ServiceWorkerRegister } from "@/features/pwa/service-worker";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({
@@ -18,10 +19,15 @@ export const metadata: Metadata = {
   },
   description:
     "Página profissional com serviços, preços e agendamento online para barbeiros, nutricionistas, eletricistas e outros autônomos.",
+  applicationName: "Agenda Autônomo",
+  appleWebApp: { capable: true, title: "Agenda", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
   themeColor: "#0f6a6e",
+  // Ocupa a tela toda no celular (inclusive sob o notch); as áreas seguras
+  // são respeitadas com env(safe-area-inset-*) no layout.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -31,7 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
       className={`${display.variable} ${body.variable} ${mono.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <ServiceWorkerRegister />
+      </body>
     </html>
   );
 }

@@ -1,19 +1,26 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 
-/** Marca: bloco de horário (a "ficha" âmbar) ao lado do nome. */
+/** Marca: cartão de agenda com a "ficha" âmbar confirmada (mesmo desenho do ícone do app). */
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <span
+    <svg
       aria-hidden
-      className={cn(
-        "relative grid size-8 place-items-center rounded-[10px] bg-brand-700 shadow-soft",
-        className,
-      )}
+      viewBox="0 0 512 512"
+      className={cn("size-8 shrink-0 rounded-[10px] shadow-soft", className)}
     >
-      <span className="absolute top-1.5 left-1.5 h-1 w-3 rounded-full bg-white/40" />
-      <span className="absolute right-1.5 bottom-1.5 left-1.5 h-2.5 rounded-[4px] bg-amber-400" />
-    </span>
+      <rect width="512" height="512" rx="116" fill="#0f6a6e" />
+      <rect x="104" y="100" width="168" height="56" rx="28" fill="#fff" fillOpacity="0.38" />
+      <rect x="104" y="196" width="304" height="216" rx="60" fill="#f6b93b" />
+      <path
+        d="M190 306l46 46 90-92"
+        fill="none"
+        stroke="#0a4144"
+        strokeWidth="34"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
@@ -22,12 +29,13 @@ export function Brand({ href = "/", light = false }: { href?: string; light?: bo
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-2.5 font-display text-[17px] font-semibold tracking-tight",
+        "flex items-center gap-2.5 font-display text-[17px] font-semibold tracking-tight whitespace-nowrap",
         light ? "text-white" : "text-ink-900",
       )}
     >
       <BrandMark />
-      Agenda Autônomo
+      {/* Em telas bem estreitas (iPhone SE) fica só o ícone. */}
+      <span className="max-[359px]:sr-only">Agenda Autônomo</span>
     </Link>
   );
 }
