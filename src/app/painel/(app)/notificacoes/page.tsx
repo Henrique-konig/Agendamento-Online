@@ -3,8 +3,8 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { NotificationSettingsForm } from "@/features/notifications/settings-form";
 import { getUser, requireProfessional } from "@/lib/auth";
-import { integrationsEnv } from "@/lib/env";
 import { dateFormatters } from "@/lib/format/date";
+import { isEmailConfigured } from "@/lib/notifications/email";
 import { isWhatsAppConfigured } from "@/lib/notifications/whatsapp";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils/cn";
@@ -47,7 +47,7 @@ export default async function NotificationsPage() {
         <NotificationSettingsForm
           professional={professional}
           accountEmail={user?.email ?? ""}
-          emailConfigured={Boolean(integrationsEnv().RESEND_API_KEY)}
+          emailConfigured={isEmailConfigured()}
           whatsappConfigured={isWhatsAppConfigured()}
         />
         <Card>

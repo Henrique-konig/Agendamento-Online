@@ -5,6 +5,8 @@ export type ActionState = {
   ok?: boolean;
   message?: string;
   fieldErrors?: Record<string, string[] | undefined>;
+  /** Valores a manter nos campos: o React limpa o formulário ao fim de cada ação. */
+  values?: Record<string, string>;
 };
 
 export const initialActionState: ActionState = {};
