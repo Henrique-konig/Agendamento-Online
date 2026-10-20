@@ -1,6 +1,7 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { getCurrentProfessional } from "@/lib/auth";
+import { describeBlobToken, isValidBlobToken, normalizeBlobToken } from "@/lib/blob-token";
 import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/lib/storage";
 
 /**
@@ -11,10 +12,19 @@ export async function POST(request: Request) {
   const body = (await request.json()) as HandleUploadBody;
   const professional = await getCurrentProfessional();
 
+  const token = normalizeBlobToken(process.env.BLOB_READ_WRITE_TOKEN);
+
   try {
+    if (token && !isValidBlobToken(token)) {
+      console.error(
+        "[upload] BLOB_READ_WRITE_TOKEN com formato inválido (esperado vercel_blob_rw_<loja>_<segredo>):",
+        describeBlobToken(token),
+      );
+    }
     const result = await handleUpload({
       body,
       request,
+      token,
       onBeforeGenerateToken: async (pathname) => {
         if (!professional) throw new Error("Não autorizado");
         if (!pathname.startsWith(`${professional.id}/`) || pathname.includes("..")) {
