@@ -34,6 +34,10 @@ export type Database = {
           min_notice_minutes: number;
           max_days_ahead: number;
           buffer_minutes: number;
+          notification_email: string | null;
+          notify_new_booking: boolean;
+          reminder_email: boolean;
+          reminder_whatsapp: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -64,6 +68,10 @@ export type Database = {
           min_notice_minutes?: number;
           max_days_ahead?: number;
           buffer_minutes?: number;
+          notification_email?: string | null;
+          notify_new_booking?: boolean;
+          reminder_email?: boolean;
+          reminder_whatsapp?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -239,6 +247,7 @@ export type Database = {
           source: "online" | "painel";
           cancel_token: string;
           cancelled_at: string | null;
+          reminder_sent_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -256,6 +265,7 @@ export type Database = {
           source?: "online" | "painel";
           cancel_token?: string;
           cancelled_at?: string | null;
+          reminder_sent_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -342,6 +352,44 @@ export type Database = {
           },
         ];
       };
+      notification_log: {
+        Row: {
+          id: string;
+          professional_id: string;
+          appointment_id: string | null;
+          quote_id: string | null;
+          kind: string;
+          channel: Database["public"]["Enums"]["notification_channel"];
+          recipient: string | null;
+          status: Database["public"]["Enums"]["notification_status"];
+          provider_id: string | null;
+          error: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          professional_id: string;
+          appointment_id?: string | null;
+          quote_id?: string | null;
+          kind: string;
+          channel: Database["public"]["Enums"]["notification_channel"];
+          recipient?: string | null;
+          status: Database["public"]["Enums"]["notification_status"];
+          provider_id?: string | null;
+          error?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["notification_log"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_professional_id_fkey";
+            columns: ["professional_id"];
+            isOneToOne: false;
+            referencedRelation: "professionals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -353,6 +401,8 @@ export type Database = {
     Enums: {
       appointment_status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
       quote_status: "new" | "contacted" | "scheduled" | "closed";
+      notification_channel: "email" | "whatsapp";
+      notification_status: "sent" | "failed" | "skipped";
     };
     CompositeTypes: { [_ in never]: never };
   };

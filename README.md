@@ -24,6 +24,8 @@ arquitetura em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 - **Next.js 16** (App Router, Server Actions, Turbopack) + **TypeScript**
 - **Tailwind CSS 4**
 - **Supabase** — Postgres, autenticação, Storage e Row Level Security
+- **Resend** (e-mail) e **WhatsApp Cloud API** para notificações — veja
+  [`docs/LEMBRETES.md`](docs/LEMBRETES.md)
 - **Zod** para validação de entrada
 - **Vitest** para testes unitários
 
