@@ -21,14 +21,33 @@ function authorized(request: NextRequest) {
  * e envia os lembretes do dia seguinte.
  */
 export async function GET(request: NextRequest) {
-  if (!authorized(request)) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  let allowed: boolean;
+  try {
+    allowed = authorized(request);
+  } catch (error) {
+    // Variável de ambiente inválida: sem autenticar o chamador, o detalhe fica só no log.
+    console.error("[cron] configuração inválida", error);
+    return NextResponse.json({ error: "Configuração inválida" }, { status: 500 });
   }
-  const expired = await expireUnpaid();
-  await Promise.all(
-    expired.map((id) => emitBookingEvent({ type: "cancelled", appointmentId: id })),
-  );
+  if (!allowed) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const result = await runReminders();
-  return NextResponse.json({ ...result, expiredPayments: expired.length });
+  try {
+    const expired = await expireUnpaid();
+    await Promise.all(
+      expired.map((id) => emitBookingEvent({ type: "cancelled", appointmentId: id })),
+    );
+
+    const result = await runReminders();
+    return NextResponse.json({ ...result, expiredPayments: expired.length });
+  } catch (error) {
+    // Só chega aqui quem enviou o segredo, então o motivo pode ir na resposta.
+    console.error("[cron] falha ao executar lembretes", error);
+    return NextResponse.json(
+      {
+        error: "Falha ao executar",
+        detalhe: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
+  }
 }
