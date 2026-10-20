@@ -42,6 +42,8 @@ export function serverEnv(): ServerEnv {
   return parsed.data;
 }
 
+/** URL absoluta do site. Não depende das chaves do Supabase. */
 export function siteUrl(path = "") {
-  return `${publicEnv().NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")}${path}`;
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  return `${base.replace(/\/$/, "")}${path}`;
 }

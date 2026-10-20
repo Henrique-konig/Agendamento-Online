@@ -22,7 +22,7 @@ Validar com três ou quatro profissionais conhecidos antes de generalizar.
 
 ## Pontos de atenção
 
-- **SEO local**: a página pública gera metadados e dados estruturados
+- **SEO local** (veja [`SEO-LOCAL.md`](SEO-LOCAL.md)): a página pública gera metadados e dados estruturados
   (`schema.org/LocalBusiness`), mas o ganho real depende do perfil no
   **Google Meu Negócio** com nome, endereço e telefone idênticos aos do site,
   e do link da página no perfil.

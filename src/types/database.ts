@@ -14,6 +14,20 @@ export type Database = {
           profession: string;
           timezone: string;
           published: boolean;
+          bio: string | null;
+          phone: string | null;
+          whatsapp: string | null;
+          contact_email: string | null;
+          instagram: string | null;
+          address_line: string | null;
+          neighborhood: string | null;
+          city: string | null;
+          state: string | null;
+          postal_code: string | null;
+          service_area: string | null;
+          show_address: boolean;
+          avatar_path: string | null;
+          cover_path: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -24,11 +38,93 @@ export type Database = {
           profession: string;
           timezone?: string;
           published?: boolean;
+          bio?: string | null;
+          phone?: string | null;
+          whatsapp?: string | null;
+          contact_email?: string | null;
+          instagram?: string | null;
+          address_line?: string | null;
+          neighborhood?: string | null;
+          city?: string | null;
+          state?: string | null;
+          postal_code?: string | null;
+          service_area?: string | null;
+          show_address?: boolean;
+          avatar_path?: string | null;
+          cover_path?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["professionals"]["Insert"]>;
         Relationships: [];
+      };
+      services: {
+        Row: {
+          id: string;
+          professional_id: string;
+          name: string;
+          description: string | null;
+          duration_minutes: number;
+          price_cents: number | null;
+          price_is_starting: boolean;
+          requires_quote: boolean;
+          active: boolean;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          professional_id: string;
+          name: string;
+          description?: string | null;
+          duration_minutes?: number;
+          price_cents?: number | null;
+          price_is_starting?: boolean;
+          requires_quote?: boolean;
+          active?: boolean;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["services"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "services_professional_id_fkey";
+            columns: ["professional_id"];
+            isOneToOne: false;
+            referencedRelation: "professionals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      photos: {
+        Row: {
+          id: string;
+          professional_id: string;
+          storage_path: string;
+          caption: string | null;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          professional_id: string;
+          storage_path: string;
+          caption?: string | null;
+          position?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["photos"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "photos_professional_id_fkey";
+            columns: ["professional_id"];
+            isOneToOne: false;
+            referencedRelation: "professionals";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: { [_ in never]: never };
