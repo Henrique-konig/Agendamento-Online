@@ -24,6 +24,7 @@ export async function completeOnboarding(
     if (error.code === "23514") {
       return { ok: false, fieldErrors: { slug: ["Este endereço não está disponível."] } };
     }
+    console.error("[onboarding] falha ao criar profissional", error.code, error.message);
     return { ok: false, message: "Não foi possível salvar. Tente novamente." };
   }
 
