@@ -27,7 +27,11 @@ export async function uploadImage(file: File, professionalId: string, prefix: st
       contentType: file.type,
     });
     return blob.url;
-  } catch {
-    throw new Error("Falha no envio da imagem. Tente novamente.");
+  } catch (error) {
+    // Mostra o motivo devolvido pelo servidor (ex.: token do Blob ausente) em vez de uma mensagem vaga.
+    const reason = error instanceof Error ? error.message.trim() : "";
+    throw new Error(
+      reason ? `Falha no envio da imagem: ${reason}` : "Falha no envio da imagem. Tente novamente.",
+    );
   }
 }
