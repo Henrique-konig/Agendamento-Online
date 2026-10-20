@@ -59,9 +59,9 @@ export function WeeklyEditor({ initialRules }: { initialRules: Rule[] }) {
             return (
               <div
                 key={weekday}
-                className="border-ink-100 flex flex-col gap-3 border-b pb-4 last:border-0 sm:flex-row"
+                className="flex flex-col gap-3 border-b border-ink-100 pb-4 last:border-0 sm:flex-row"
               >
-                <div className="text-ink-800 w-36 shrink-0 pt-2 text-sm font-medium">
+                <div className="w-36 shrink-0 pt-2 text-sm font-medium text-ink-800">
                   {WEEKDAYS[weekday]}
                 </div>
                 <div className="flex-1 space-y-2">
@@ -83,20 +83,20 @@ export function WeeklyEditor({ initialRules }: { initialRules: Rule[] }) {
                           type="button"
                           onClick={() => remove(row.key)}
                           aria-label="Remover faixa"
-                          className="text-ink-400 hover:bg-ink-100 rounded-md px-2 py-1 hover:text-red-600"
+                          className="rounded-md px-2 py-1 text-ink-400 hover:bg-ink-100 hover:text-red-600"
                         >
                           ✕
                         </button>
                       </div>
                     ))
                   ) : (
-                    <p className="text-ink-400 pt-2 text-sm">Fechado</p>
+                    <p className="pt-2 text-sm text-ink-400">Fechado</p>
                   )}
                   <div className="flex gap-3">
                     <button
                       type="button"
                       onClick={() => add(weekday)}
-                      className="text-brand-700 text-sm font-medium hover:underline"
+                      className="text-sm font-medium text-brand-700 hover:underline"
                     >
                       + Adicionar faixa
                     </button>
@@ -104,7 +104,7 @@ export function WeeklyEditor({ initialRules }: { initialRules: Rule[] }) {
                       <button
                         type="button"
                         onClick={() => copyToWeekdays(weekday)}
-                        className="text-ink-500 text-sm hover:underline"
+                        className="text-sm text-ink-500 hover:underline"
                       >
                         Copiar para seg–sex
                       </button>
@@ -142,7 +142,7 @@ function TimeInput({
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="ring-ink-200 focus:ring-brand-600 h-9 rounded-lg border-0 px-2 text-sm ring-1 focus:ring-2"
+      className="h-9 rounded-lg border-0 px-2 text-sm ring-1 ring-ink-200 focus:ring-2 focus:ring-brand-600"
     />
   );
 }

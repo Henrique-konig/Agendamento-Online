@@ -72,12 +72,17 @@ export function ServiceForm({ service }: { service?: Tables<"services"> }) {
             defaultChecked={service?.requires_quote}
           />
           <Checkbox
+            name="requires_prepayment"
+            label="Exigir pagamento antecipado via Pix (configure em Pagamentos)"
+            defaultChecked={service?.requires_prepayment}
+          />
+          <Checkbox
             name="active"
             label="Ativo (visível na página)"
             defaultChecked={service?.active ?? true}
           />
         </fieldset>
-        <div className="border-ink-100 flex justify-end gap-2 border-t pt-5">
+        <div className="flex justify-end gap-2 border-t border-ink-100 pt-5">
           <LinkButton href="/painel/servicos" variant="ghost">
             Cancelar
           </LinkButton>
@@ -98,12 +103,12 @@ function Checkbox({
   defaultChecked?: boolean;
 }) {
   return (
-    <label className="text-ink-700 flex items-center gap-2 text-sm">
+    <label className="flex items-center gap-2 text-sm text-ink-700">
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="border-ink-300 text-brand-600 size-4 rounded"
+        className="size-4 rounded border-ink-300 text-brand-600"
       />
       {label}
     </label>

@@ -10,6 +10,7 @@ export async function getAppointmentByToken(token: string) {
     .from("appointments")
     .select(
       `id, starts_at, ends_at, status, service_name, price_cents, cancel_token,
+       payment_status, payment_amount_cents, payment_provider, payment_expires_at, pix_copy_paste,
        client:clients(name),
        professional:professionals(slug, display_name, profession, avatar_path, timezone,
          address_line, neighborhood, city, state, show_address, whatsapp)`,

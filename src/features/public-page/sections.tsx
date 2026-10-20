@@ -20,7 +20,7 @@ export function Section({
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-6">
-      <h2 id={`${id}-title`} className="text-ink-900 mb-4 text-lg font-semibold">
+      <h2 id={`${id}-title`} className="mb-4 text-lg font-semibold text-ink-900">
         {title}
       </h2>
       {children}
@@ -41,14 +41,14 @@ export function Hero({
 
   return (
     <header className="bg-white">
-      <div className="from-brand-600 to-brand-900 relative h-40 bg-gradient-to-br sm:h-56">
+      <div className="relative h-40 bg-gradient-to-br from-brand-600 to-brand-900 sm:h-56">
         {cover ? (
           <Image src={cover} alt="" fill priority sizes="100vw" className="object-cover" />
         ) : null}
       </div>
       <div className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
-        <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end">
-          <div className="bg-ink-100 relative size-24 shrink-0 overflow-hidden rounded-2xl ring-4 ring-white sm:size-28">
+        <div className="-mt-12 flex flex-col gap-4 sm:-mt-14">
+          <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl bg-ink-100 ring-4 ring-white sm:size-28">
             {avatar ? (
               <Image
                 src={avatar}
@@ -58,13 +58,13 @@ export function Hero({
                 className="object-cover"
               />
             ) : (
-              <span className="text-ink-400 grid size-full place-items-center text-3xl font-semibold">
+              <span className="grid size-full place-items-center text-3xl font-semibold text-ink-400">
                 {p.display_name.charAt(0)}
               </span>
             )}
           </div>
-          <div className="min-w-0 flex-1 sm:pb-1">
-            <h1 className="text-ink-900 text-2xl font-semibold tracking-tight sm:text-3xl">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl">
               {p.display_name}
             </h1>
             <p className="text-ink-600">
@@ -87,15 +87,15 @@ export function ServiceList({
   renderAction?: (service: Service) => ReactNode;
 }) {
   return (
-    <ul className="divide-ink-100 ring-ink-200/70 divide-y overflow-hidden rounded-2xl bg-white ring-1">
+    <ul className="divide-y divide-ink-100 overflow-hidden rounded-2xl bg-white ring-1 ring-ink-200/70">
       {services.map((s) => (
         <li key={s.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">
-            <h3 className="text-ink-900 font-medium">{s.name}</h3>
-            {s.description ? <p className="text-ink-600 mt-1 text-sm">{s.description}</p> : null}
-            <p className="text-ink-500 mt-1 text-sm">
+            <h3 className="font-medium text-ink-900">{s.name}</h3>
+            {s.description ? <p className="mt-1 text-sm text-ink-600">{s.description}</p> : null}
+            <p className="mt-1 text-sm text-ink-500">
               {formatDuration(s.duration_minutes)} ·{" "}
-              <span className="text-ink-800 font-medium">{formatServicePrice(s)}</span>
+              <span className="font-medium text-ink-800">{formatServicePrice(s)}</span>
             </p>
           </div>
           {renderAction ? <div className="shrink-0">{renderAction(s)}</div> : null}
@@ -110,7 +110,7 @@ export function Gallery({ photos }: { photos: PublicPage["photos"] }) {
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {photos.map((photo) => (
         <li key={photo.id}>
-          <figure className="bg-ink-100 overflow-hidden rounded-xl">
+          <figure className="overflow-hidden rounded-xl bg-ink-100">
             <div className="relative aspect-square">
               <Image
                 src={publicMediaUrl(photo.storage_path) ?? ""}
@@ -121,7 +121,7 @@ export function Gallery({ photos }: { photos: PublicPage["photos"] }) {
               />
             </div>
             {photo.caption ? (
-              <figcaption className="text-ink-600 bg-white px-3 py-2 text-xs">
+              <figcaption className="bg-white px-3 py-2 text-xs text-ink-600">
                 {photo.caption}
               </figcaption>
             ) : null}
@@ -137,7 +137,7 @@ export function Location({ professional: p }: { professional: Professional }) {
   const query = encodeURIComponent([address, p.state, "Brasil"].filter(Boolean).join(", "));
 
   return (
-    <div className="ring-ink-200/70 overflow-hidden rounded-2xl bg-white ring-1">
+    <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-ink-200/70">
       <iframe
         title={`Mapa: ${address}`}
         src={`https://www.google.com/maps?q=${query}&output=embed`}
@@ -146,7 +146,7 @@ export function Location({ professional: p }: { professional: Professional }) {
         referrerPolicy="no-referrer-when-downgrade"
       />
       <div className="flex flex-col gap-2 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <address className="text-ink-700 text-sm not-italic">
+        <address className="text-sm text-ink-700 not-italic">
           {address}
           {p.postal_code ? ` · CEP ${p.postal_code.replace(/(\d{5})(\d{3})/, "$1-$2")}` : ""}
         </address>
@@ -154,7 +154,7 @@ export function Location({ professional: p }: { professional: Professional }) {
           href={`https://www.google.com/maps/search/?api=1&query=${query}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-brand-700 text-sm font-medium hover:underline"
+          className="text-sm font-medium text-brand-700 hover:underline"
         >
           Como chegar →
         </a>
@@ -188,14 +188,14 @@ export function Contact({ professional: p }: { professional: Professional }) {
   return (
     <dl className="grid gap-3 sm:grid-cols-2">
       {items.map((item) => (
-        <div key={item.label} className="ring-ink-200/70 rounded-xl bg-white p-4 ring-1">
-          <dt className="text-ink-500 text-xs font-medium tracking-wide uppercase">{item.label}</dt>
+        <div key={item.label} className="rounded-xl bg-white p-4 ring-1 ring-ink-200/70">
+          <dt className="text-xs font-medium tracking-wide text-ink-500 uppercase">{item.label}</dt>
           <dd className="mt-1">
             <a
               href={item.href}
               target={item.href.startsWith("http") ? "_blank" : undefined}
               rel="noopener noreferrer"
-              className="text-ink-900 hover:text-brand-700 font-medium break-all"
+              className="font-medium break-all text-ink-900 hover:text-brand-700"
             >
               {item.value}
             </a>

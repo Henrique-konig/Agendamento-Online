@@ -64,12 +64,12 @@ export default async function ClientPage(props: PageProps<"/painel/clientes/[id]
         <Card>
           <CardHeader title="Histórico" />
           {history?.length ? (
-            <ul className="divide-ink-100 divide-y text-sm">
+            <ul className="divide-y divide-ink-100 text-sm">
               {history.map((a) => (
                 <li key={a.id} className="flex justify-between gap-4 py-3">
                   <span>
-                    <span className="text-ink-900 font-medium">{a.service_name}</span>
-                    <span className="text-ink-500 block">
+                    <span className="font-medium text-ink-900">{a.service_name}</span>
+                    <span className="block text-ink-500">
                       {capitalize(f.long(a.starts_at))} · {f.time(a.starts_at)}
                     </span>
                   </span>
@@ -78,7 +78,7 @@ export default async function ClientPage(props: PageProps<"/painel/clientes/[id]
               ))}
             </ul>
           ) : (
-            <p className="text-ink-500 text-sm">Sem agendamentos.</p>
+            <p className="text-sm text-ink-500">Sem agendamentos.</p>
           )}
         </Card>
       </div>

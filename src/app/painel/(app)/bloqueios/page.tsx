@@ -31,15 +31,15 @@ export default async function TimeOffPage() {
         <Card>
           <CardHeader title="Próximos bloqueios" />
           {blocks?.length ? (
-            <ul className="divide-ink-100 divide-y">
+            <ul className="divide-y divide-ink-100">
               {blocks.map((b) => (
                 <li key={b.id} className="flex items-center justify-between gap-4 py-3">
                   <div>
-                    <p className="text-ink-900 text-sm font-medium">
+                    <p className="text-sm font-medium text-ink-900">
                       {capitalize(f.long(b.starts_at))} {f.time(b.starts_at)} → {f.long(b.ends_at)}{" "}
                       {f.time(b.ends_at)}
                     </p>
-                    {b.reason ? <p className="text-ink-500 text-xs">{b.reason}</p> : null}
+                    {b.reason ? <p className="text-xs text-ink-500">{b.reason}</p> : null}
                   </div>
                   <form action={deleteTimeOff}>
                     <input type="hidden" name="id" value={b.id} />
@@ -51,7 +51,7 @@ export default async function TimeOffPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-ink-500 text-sm">Nenhum bloqueio futuro.</p>
+            <p className="text-sm text-ink-500">Nenhum bloqueio futuro.</p>
           )}
         </Card>
       </div>

@@ -29,11 +29,11 @@ type FieldProps = {
 export function Field({ label, name, hint, errors, children, className }: FieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={name} className="text-ink-800 block text-sm font-medium">
+      <label htmlFor={name} className="block text-sm font-medium text-ink-800">
         {label}
       </label>
       {children}
-      {hint && !errors?.length ? <p className="text-ink-500 text-xs">{hint}</p> : null}
+      {hint && !errors?.length ? <p className="text-xs text-ink-500">{hint}</p> : null}
       {errors?.length ? (
         <p id={`${name}-error`} className="text-xs text-red-600">
           {errors[0]}

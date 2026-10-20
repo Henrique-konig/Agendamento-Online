@@ -6,7 +6,9 @@ import { getAvailableDays } from "@/features/booking/availability";
 import { BookingForm } from "@/features/booking/booking-form";
 import { getPublicPage } from "@/features/public-page/queries";
 import { PublicShell } from "@/features/public-page/public-shell";
-import { formatDuration, formatServicePrice } from "@/lib/format/money";
+import { depositAmountCents } from "@/features/payments/amount";
+import { getPixSettings, isPixReady } from "@/features/payments/settings";
+import { formatBRL, formatDuration, formatServicePrice } from "@/lib/format/money";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function generateMetadata(props: PageProps<"/[slug]/agendar">): Promise<Metadata> {
@@ -38,11 +40,11 @@ export default async function BookingPage(props: PageProps<"/[slug]/agendar">) {
               <li key={s.id}>
                 <Link
                   href={`/${professional.slug}/agendar?servico=${s.id}`}
-                  className="ring-ink-200 hover:ring-brand-500 flex items-center justify-between gap-4 rounded-xl bg-white p-4 ring-1 transition"
+                  className="flex items-center justify-between gap-4 rounded-xl bg-white p-4 ring-1 ring-ink-200 transition hover:ring-brand-500"
                 >
                   <span>
-                    <span className="text-ink-900 block font-medium">{s.name}</span>
-                    <span className="text-ink-500 text-sm">
+                    <span className="block font-medium text-ink-900">{s.name}</span>
+                    <span className="text-sm text-ink-500">
                       {formatDuration(s.duration_minutes)} · {formatServicePrice(s)}
                     </span>
                   </span>
@@ -60,21 +62,29 @@ export default async function BookingPage(props: PageProps<"/[slug]/agendar">) {
     );
   }
 
-  const days = await getAvailableDays(createAdminClient(), professional, service);
+  const admin = createAdminClient();
+  const [days, pix] = await Promise.all([
+    getAvailableDays(admin, professional, service),
+    service.requires_prepayment ? getPixSettings(admin, professional.id) : null,
+  ]);
+  const deposit =
+    isPixReady(pix) && service.price_cents
+      ? depositAmountCents(service.price_cents, pix.deposit_percent)
+      : 0;
 
   return (
     <PublicShell professional={professional} title="Escolha seu horário">
-      <div className="ring-ink-200 mb-8 flex items-center justify-between gap-4 rounded-xl bg-white p-4 ring-1">
+      <div className="mb-8 flex items-center justify-between gap-4 rounded-xl bg-white p-4 ring-1 ring-ink-200">
         <div>
-          <p className="text-ink-900 font-medium">{service.name}</p>
-          <p className="text-ink-500 text-sm">
+          <p className="font-medium text-ink-900">{service.name}</p>
+          <p className="text-sm text-ink-500">
             {formatDuration(service.duration_minutes)} · {formatServicePrice(service)}
           </p>
         </div>
         {bookable.length > 1 ? (
           <Link
             href={`/${professional.slug}/agendar`}
-            className="text-brand-700 text-sm font-medium hover:underline"
+            className="text-sm font-medium text-brand-700 hover:underline"
           >
             Trocar
           </Link>
@@ -85,6 +95,15 @@ export default async function BookingPage(props: PageProps<"/[slug]/agendar">) {
         serviceId={service.id}
         timeZone={professional.timezone}
         days={days.map((d) => ({ date: d.date, slots: d.slots.map((s) => s.toISOString()) }))}
+        prepayment={
+          deposit && pix
+            ? {
+                amountLabel: formatBRL(deposit),
+                holdMinutes: pix.hold_minutes,
+                requireEmail: pix.mode === "mercadopago",
+              }
+            : undefined
+        }
       />
     </PublicShell>
   );

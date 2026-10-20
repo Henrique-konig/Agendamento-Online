@@ -23,7 +23,7 @@ export default async function ServicesPage() {
       />
       {services.length ? (
         <Card className="p-0">
-          <ul className="divide-ink-100 divide-y">
+          <ul className="divide-y divide-ink-100">
             {services.map((service, index) => (
               <li key={service.id} className="flex items-center gap-4 px-6 py-4">
                 <div className="flex flex-col">
@@ -37,17 +37,17 @@ export default async function ServicesPage() {
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/painel/servicos/${service.id}`}
-                    className="text-ink-900 font-medium hover:underline"
+                    className="font-medium text-ink-900 hover:underline"
                   >
                     {service.name}
                   </Link>
-                  <p className="text-ink-500 text-sm">
+                  <p className="text-sm text-ink-500">
                     {formatDuration(service.duration_minutes)} · {formatServicePrice(service)}
                     {service.requires_quote ? " · orçamento" : ""}
                   </p>
                 </div>
                 {!service.active ? (
-                  <span className="bg-ink-100 text-ink-600 rounded-full px-2 py-0.5 text-xs">
+                  <span className="rounded-full bg-ink-100 px-2 py-0.5 text-xs text-ink-600">
                     Inativo
                   </span>
                 ) : null}
@@ -56,7 +56,7 @@ export default async function ServicesPage() {
           </ul>
         </Card>
       ) : (
-        <Card className="text-ink-500 text-center text-sm">
+        <Card className="text-center text-sm text-ink-500">
           Nenhum serviço ainda. Cadastre o primeiro para aparecer na sua página.
         </Card>
       )}
@@ -81,7 +81,7 @@ function MoveButton({
         type="submit"
         disabled={disabled}
         aria-label={direction === "up" ? "Mover para cima" : "Mover para baixo"}
-        className="text-ink-400 hover:text-ink-900 px-1 text-xs leading-none disabled:opacity-30"
+        className="px-1 text-xs leading-none text-ink-400 hover:text-ink-900 disabled:opacity-30"
       >
         {direction === "up" ? "▲" : "▼"}
       </button>

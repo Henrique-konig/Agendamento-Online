@@ -56,7 +56,7 @@ export function ManualAppointmentForm({ services, defaultDate }: Props) {
         <Field label="Observações" name="notes" errors={e.notes}>
           <Textarea id="notes" name="notes" rows={2} />
         </Field>
-        <div className="border-ink-100 flex justify-end gap-2 border-t pt-5">
+        <div className="flex justify-end gap-2 border-t border-ink-100 pt-5">
           <LinkButton href="/painel/agenda" variant="ghost">
             Cancelar
           </LinkButton>

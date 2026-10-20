@@ -6,7 +6,7 @@ export async function listAppointments(professionalId: string, from: Date, to: D
   const { data, error } = await supabase
     .from("appointments")
     .select(
-      "id, starts_at, ends_at, status, service_name, price_cents, notes, source, client:clients(id, name, phone)",
+      "id, starts_at, ends_at, status, service_name, price_cents, notes, source, payment_status, payment_amount_cents, payment_provider, client:clients(id, name, phone)",
     )
     .eq("professional_id", professionalId)
     .gte("starts_at", from.toISOString())

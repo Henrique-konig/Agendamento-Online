@@ -49,7 +49,7 @@ export default async function IntegrationsPage(props: PageProps<"/painel/integra
           />
           {connection ? (
             <div className="space-y-5">
-              <p className="text-ink-700 text-sm">
+              <p className="text-sm text-ink-700">
                 Conectado como <strong>{connection.google_email ?? "conta Google"}</strong> desde{" "}
                 {f.short(connection.created_at)}.
               </p>
@@ -67,13 +67,13 @@ export default async function IntegrationsPage(props: PageProps<"/painel/integra
                     type="checkbox"
                     name="sync_busy"
                     defaultChecked={connection.sync_busy}
-                    className="border-ink-300 mt-0.5 size-4 rounded"
+                    className="mt-0.5 size-4 rounded border-ink-300"
                   />
                   <span>
-                    <span className="text-ink-900 font-medium">
+                    <span className="font-medium text-ink-900">
                       Bloquear horários ocupados no Google
                     </span>
-                    <span className="text-ink-500 block">
+                    <span className="block text-ink-500">
                       Só vemos se o horário está livre ou ocupado — nunca o conteúdo dos eventos.
                     </span>
                   </span>
@@ -83,9 +83,9 @@ export default async function IntegrationsPage(props: PageProps<"/painel/integra
                     type="checkbox"
                     name="create_events"
                     defaultChecked={connection.create_events}
-                    className="border-ink-300 mt-0.5 size-4 rounded"
+                    className="mt-0.5 size-4 rounded border-ink-300"
                   />
-                  <span className="text-ink-900 font-medium">
+                  <span className="font-medium text-ink-900">
                     Criar evento no Google para cada agendamento
                   </span>
                 </label>
@@ -93,7 +93,7 @@ export default async function IntegrationsPage(props: PageProps<"/painel/integra
                   Salvar preferências
                 </Button>
               </form>
-              <div className="border-ink-100 flex flex-wrap gap-2 border-t pt-5">
+              <div className="flex flex-wrap gap-2 border-t border-ink-100 pt-5">
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- route handler com redirect externo (OAuth) */}
                 <a href="/api/google/conectar" className={buttonClasses("ghost", "sm")}>
                   Reconectar
@@ -111,7 +111,7 @@ export default async function IntegrationsPage(props: PageProps<"/painel/integra
               Conectar Google Agenda
             </a>
           ) : (
-            <p className="text-ink-500 text-sm">
+            <p className="text-sm text-ink-500">
               Integração ainda não configurada nesta instalação (veja docs/GOOGLE-AGENDA.md).
             </p>
           )}

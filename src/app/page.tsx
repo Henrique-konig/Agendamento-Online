@@ -33,7 +33,7 @@ const audiences = ["Barbeiros", "Nutricionistas", "Eletricistas", "Personal trai
 export default function HomePage() {
   return (
     <>
-      <header className="border-ink-200 border-b bg-white">
+      <header className="border-b border-ink-200 bg-white">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Brand />
           <nav className="flex items-center gap-2">
@@ -48,13 +48,13 @@ export default function HomePage() {
       <main className="flex-1">
         <section className="bg-white">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
-            <p className="text-brand-700 text-sm font-semibold">
+            <p className="text-sm font-semibold text-brand-700">
               {audiences.join(" · ")} e outros autônomos
             </p>
-            <h1 className="text-ink-900 mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+            <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
               Troque o WhatsApp e o caderno por uma agenda que trabalha sozinha.
             </h1>
-            <p className="text-ink-600 mt-6 max-w-2xl text-lg">
+            <p className="mt-6 max-w-2xl text-lg text-ink-600">
               Monte sua página em minutos, mostre seus serviços e deixe os clientes agendarem nos
               horários que você definir.
             </p>
@@ -73,17 +73,17 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold tracking-tight">Tudo o que um autônomo precisa</h2>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
-              <div key={f.title} className="ring-ink-200/70 rounded-2xl bg-white p-6 ring-1">
-                <h3 className="text-ink-900 font-semibold">{f.title}</h3>
-                <p className="text-ink-600 mt-2 text-sm">{f.text}</p>
+              <div key={f.title} className="rounded-2xl bg-white p-6 ring-1 ring-ink-200/70">
+                <h3 className="font-semibold text-ink-900">{f.title}</h3>
+                <p className="mt-2 text-sm text-ink-600">{f.text}</p>
               </div>
             ))}
           </div>
         </section>
       </main>
 
-      <footer className="border-ink-200 border-t bg-white">
-        <div className="text-ink-500 mx-auto max-w-6xl px-4 py-8 text-sm sm:px-6">
+      <footer className="border-t border-ink-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-500 sm:px-6">
           © {new Date().getFullYear()} Agenda Autônomo
         </div>
       </footer>

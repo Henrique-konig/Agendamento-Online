@@ -19,6 +19,19 @@ WhatsApp e caderno.
 O roteiro completo está em [`docs/ROADMAP.md`](docs/ROADMAP.md) e a
 arquitetura em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
+## Deploy
+
+Pensado para a **Vercel** + **Supabase**:
+
+1. Crie o projeto no Supabase e aplique as migrations (`supabase db push`).
+2. Importe o repositório na Vercel e configure as variáveis de
+   `.env.example` (apenas as do Supabase são obrigatórias; cada integração
+   liga quando suas variáveis existem).
+3. `vercel.json` já agenda o cron de lembretes/expiração de Pix — defina
+   `CRON_SECRET`.
+4. No Supabase, em **Authentication → URL Configuration**, use a URL de
+   produção como _Site URL_ e adicione `/auth/confirmar` às Redirect URLs.
+
 ## Stack
 
 - **Next.js 16** (App Router, Server Actions, Turbopack) + **TypeScript**

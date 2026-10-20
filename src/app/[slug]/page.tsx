@@ -138,14 +138,14 @@ export default async function PublicProfilePage(props: PageProps<"/[slug]">) {
 
         {p.bio ? (
           <Section id="sobre" title="Sobre">
-            <p className="text-ink-700 leading-relaxed whitespace-pre-line">{p.bio}</p>
+            <p className="leading-relaxed whitespace-pre-line text-ink-700">{p.bio}</p>
           </Section>
         ) : null}
 
         {hasAddress || p.service_area ? (
           <Section id="localizacao" title="Localização">
             {p.service_area ? (
-              <p className="text-ink-700 mb-4 text-sm">
+              <p className="mb-4 text-sm text-ink-700">
                 <span className="font-medium">Área de atendimento:</span> {p.service_area}
               </p>
             ) : null}
@@ -158,8 +158,8 @@ export default async function PublicProfilePage(props: PageProps<"/[slug]">) {
         </Section>
       </main>
 
-      <footer className="border-ink-200 border-t bg-white">
-        <div className="text-ink-500 mx-auto flex max-w-3xl items-center justify-between px-4 py-6 text-xs sm:px-6">
+      <footer className="border-t border-ink-200 bg-white">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-6 text-xs text-ink-500 sm:px-6">
           <span>
             © {new Date().getFullYear()} {p.display_name}
           </span>

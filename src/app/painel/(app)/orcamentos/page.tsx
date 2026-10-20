@@ -34,21 +34,21 @@ export default async function QuotesPage() {
       {quotes?.length ? (
         <div className="space-y-4">
           {quotes.map((q) => (
-            <Card key={q.id} className={cn(q.status === "new" && "ring-brand-500 ring-2")}>
+            <Card key={q.id} className={cn(q.status === "new" && "ring-2 ring-brand-500")}>
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
                 <div className="min-w-0 space-y-1">
-                  <p className="text-ink-900 font-medium">
+                  <p className="font-medium text-ink-900">
                     {q.name}
                     {q.service_name ? (
                       <span className="text-ink-500"> · {q.service_name}</span>
                     ) : null}
                   </p>
-                  <p className="text-ink-500 text-xs">
+                  <p className="text-xs text-ink-500">
                     {f.short(q.created_at)} às {f.time(q.created_at)}
                     {q.location ? ` · ${q.location}` : ""}
                     {q.preferred_period ? ` · ${q.preferred_period}` : ""}
                   </p>
-                  <p className="text-ink-700 pt-2 text-sm whitespace-pre-line">{q.description}</p>
+                  <p className="pt-2 text-sm whitespace-pre-line text-ink-700">{q.description}</p>
                   <p className="pt-2 text-sm">
                     <a
                       href={whatsappLink(
@@ -57,7 +57,7 @@ export default async function QuotesPage() {
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-brand-700 font-medium hover:underline"
+                      className="font-medium text-brand-700 hover:underline"
                     >
                       {formatPhoneBR(q.phone)}
                     </a>
@@ -75,7 +75,7 @@ export default async function QuotesPage() {
                         className={cn(
                           "w-full rounded-md px-2.5 py-1 text-xs ring-1 ring-inset",
                           q.status === value
-                            ? "bg-ink-900 ring-ink-900 text-white"
+                            ? "bg-ink-900 text-white ring-ink-900"
                             : "text-ink-600 ring-ink-200 hover:bg-ink-50",
                         )}
                       >
@@ -89,7 +89,7 @@ export default async function QuotesPage() {
           ))}
         </div>
       ) : (
-        <Card className="text-ink-500 text-center text-sm">
+        <Card className="text-center text-sm text-ink-500">
           Nenhum pedido ainda. Marque um serviço como “exige avaliação” para receber orçamentos.
         </Card>
       )}

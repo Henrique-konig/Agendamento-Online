@@ -7,6 +7,7 @@ import { appointmentLocation, appointmentToCalendarEvent } from "@/features/book
 import { canClientCancel, CLIENT_CANCEL_LIMIT_MINUTES } from "@/features/booking/policy";
 import { getAppointmentByToken } from "@/features/booking/queries";
 import { appointmentStatusLabel, appointmentStatusTone } from "@/features/booking/status";
+import { PixPayment } from "@/features/payments/pix-payment";
 import { PublicShell } from "@/features/public-page/public-shell";
 import { googleCalendarLink } from "@/lib/calendar/links";
 import { whatsappLink } from "@/lib/format/contact";
@@ -28,28 +29,52 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
   const event = appointmentToCalendarEvent({ ...appointment, professional }, manageUrl);
   const location = appointmentLocation(professional);
   const active = appointment.status === "pending" || appointment.status === "confirmed";
+  const awaitingPix =
+    active &&
+    appointment.payment_status === "pending" &&
+    appointment.pix_copy_paste &&
+    appointment.payment_amount_cents &&
+    appointment.payment_expires_at;
   const cancellable = active && canClientCancel(appointment.starts_at);
 
   return (
     <PublicShell
       professional={professional}
-      title={active ? "Agendamento recebido!" : "Seu agendamento"}
+      title={
+        awaitingPix ? "Finalize com o Pix" : active ? "Agendamento recebido!" : "Seu agendamento"
+      }
     >
       <div className="space-y-6">
-        {appointment.status === "pending" ? (
+        {awaitingPix ? (
+          <PixPayment
+            copyPaste={appointment.pix_copy_paste!}
+            amountCents={appointment.payment_amount_cents!}
+            expiresAt={appointment.payment_expires_at!}
+            timeZone={professional.timezone}
+            automatic={appointment.payment_provider === "mercadopago"}
+          />
+        ) : appointment.status === "pending" ? (
           <Alert tone="warning">
             {professional.display_name} vai confirmar seu horário em breve.
           </Alert>
         ) : null}
+        {appointment.payment_status === "paid" ? (
+          <Alert tone="success">
+            Pagamento de {formatBRL(appointment.payment_amount_cents ?? 0)} confirmado.
+          </Alert>
+        ) : null}
+        {appointment.payment_status === "expired" ? (
+          <Alert tone="error">O prazo do Pix venceu e o horário foi liberado.</Alert>
+        ) : null}
 
-        <div className="ring-ink-200 rounded-2xl bg-white p-6 ring-1">
+        <div className="rounded-2xl bg-white p-6 ring-1 ring-ink-200">
           <span
             className={cn(
               "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1",
               appointmentStatusTone[appointment.status],
             )}
           >
-            {appointmentStatusLabel[appointment.status]}
+            {awaitingPix ? "Aguardando pagamento" : appointmentStatusLabel[appointment.status]}
           </span>
           <dl className="mt-4 space-y-3 text-sm">
             <Row label="Serviço" value={appointment.service_name} />
@@ -92,19 +117,19 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
           </div>
         ) : null}
 
-        <p className="text-ink-500 text-xs">
+        <p className="text-xs text-ink-500">
           Guarde este link para consultar ou cancelar seu agendamento.
         </p>
 
         {cancellable ? (
-          <form action={cancelBookingByToken} className="border-ink-200 border-t pt-6">
+          <form action={cancelBookingByToken} className="border-t border-ink-200 pt-6">
             <input type="hidden" name="token" value={token} />
             <Button type="submit" variant="ghost" className="text-red-600">
               Cancelar agendamento
             </Button>
           </form>
         ) : active ? (
-          <p className="border-ink-200 text-ink-500 border-t pt-6 text-sm">
+          <p className="border-t border-ink-200 pt-6 text-sm text-ink-500">
             Cancelamentos online são aceitos até {CLIENT_CANCEL_LIMIT_MINUTES / 60} horas antes.
             Fale direto com o profissional.
           </p>
@@ -117,8 +142,8 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-4">
-      <dt className="text-ink-500 w-20 shrink-0">{label}</dt>
-      <dd className="text-ink-900 font-medium">{value}</dd>
+      <dt className="w-20 shrink-0 text-ink-500">{label}</dt>
+      <dd className="font-medium text-ink-900">{value}</dd>
     </div>
   );
 }

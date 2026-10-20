@@ -95,11 +95,11 @@ export function ScheduleSettingsForm({
               type="checkbox"
               name="booking_enabled"
               defaultChecked={p.booking_enabled}
-              className="border-ink-300 mt-0.5 size-4 rounded"
+              className="mt-0.5 size-4 rounded border-ink-300"
             />
             <span>
-              <span className="text-ink-900 font-medium">Aceitar agendamentos online</span>
-              <span className="text-ink-500 block">Desative em férias longas.</span>
+              <span className="font-medium text-ink-900">Aceitar agendamentos online</span>
+              <span className="block text-ink-500">Desative em férias longas.</span>
             </span>
           </label>
           <label className="flex items-start gap-3 text-sm">
@@ -107,11 +107,11 @@ export function ScheduleSettingsForm({
               type="checkbox"
               name="auto_confirm"
               defaultChecked={p.auto_confirm}
-              className="border-ink-300 mt-0.5 size-4 rounded"
+              className="mt-0.5 size-4 rounded border-ink-300"
             />
             <span>
-              <span className="text-ink-900 font-medium">Confirmar automaticamente</span>
-              <span className="text-ink-500 block">
+              <span className="font-medium text-ink-900">Confirmar automaticamente</span>
+              <span className="block text-ink-500">
                 Se desmarcado, cada reserva fica pendente até você confirmar.
               </span>
             </span>

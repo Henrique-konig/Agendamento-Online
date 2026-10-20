@@ -20,19 +20,19 @@ export function PublicShell({
   const avatar = publicMediaUrl(professional.avatar_path);
   return (
     <>
-      <header className="border-ink-200 border-b bg-white">
+      <header className="border-b border-ink-200 bg-white">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4 sm:px-6">
           <Link href={`/${professional.slug}`} className="flex min-w-0 items-center gap-3">
-            <span className="bg-ink-100 relative size-10 shrink-0 overflow-hidden rounded-full">
+            <span className="relative size-10 shrink-0 overflow-hidden rounded-full bg-ink-100">
               {avatar ? (
                 <Image src={avatar} alt="" fill sizes="40px" className="object-cover" />
               ) : null}
             </span>
             <span className="min-w-0">
-              <span className="text-ink-900 block truncate font-medium">
+              <span className="block truncate font-medium text-ink-900">
                 {professional.display_name}
               </span>
-              <span className="text-ink-500 block truncate text-xs">{professional.profession}</span>
+              <span className="block truncate text-xs text-ink-500">{professional.profession}</span>
             </span>
           </Link>
         </div>

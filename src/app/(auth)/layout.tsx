@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="mb-8">
         <Brand />
       </div>
-      <div className="ring-ink-200/70 w-full max-w-sm rounded-2xl bg-white p-8 shadow-xs ring-1">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xs ring-1 ring-ink-200/70">
         {children}
       </div>
     </main>

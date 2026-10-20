@@ -147,12 +147,12 @@ export function ProfileForm({
           >
             <Input id="service_area" name="service_area" defaultValue={p.service_area ?? ""} />
           </Field>
-          <label className="text-ink-700 flex items-center gap-2 text-sm sm:col-span-6">
+          <label className="flex items-center gap-2 text-sm text-ink-700 sm:col-span-6">
             <input
               type="checkbox"
               name="show_address"
               defaultChecked={p.show_address}
-              className="border-ink-300 text-brand-600 size-4 rounded"
+              className="size-4 rounded border-ink-300 text-brand-600"
             />
             Mostrar endereço e mapa na página
           </label>
@@ -165,11 +165,11 @@ export function ProfileForm({
             type="checkbox"
             name="published"
             defaultChecked={p.published}
-            className="border-ink-300 text-brand-600 mt-0.5 size-4 rounded"
+            className="mt-0.5 size-4 rounded border-ink-300 text-brand-600"
           />
           <span>
-            <span className="text-ink-900 font-medium">Página publicada</span>
-            <span className="text-ink-500 block">Desmarque para tirar a página do ar.</span>
+            <span className="font-medium text-ink-900">Página publicada</span>
+            <span className="block text-ink-500">Desmarque para tirar a página do ar.</span>
           </span>
         </label>
         <SubmitButton>Salvar alterações</SubmitButton>

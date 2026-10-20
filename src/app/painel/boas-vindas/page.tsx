@@ -16,9 +16,9 @@ export default async function OnboardingPage() {
       <div className="mb-8">
         <Brand />
       </div>
-      <div className="ring-ink-200/70 w-full max-w-md rounded-2xl bg-white p-8 shadow-xs ring-1">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xs ring-1 ring-ink-200/70">
         <h1 className="text-xl font-semibold">Vamos configurar sua página</h1>
-        <p className="text-ink-500 mt-1 mb-6 text-sm">Você pode alterar tudo depois no painel.</p>
+        <p className="mt-1 mb-6 text-sm text-ink-500">Você pode alterar tudo depois no painel.</p>
         <OnboardingForm siteHost={new URL(siteUrl()).host} />
       </div>
     </main>
