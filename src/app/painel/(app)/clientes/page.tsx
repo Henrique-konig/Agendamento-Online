@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireProfessional } from "@/lib/auth";
@@ -63,11 +64,15 @@ export default async function ClientsPage(props: PageProps<"/painel/clientes">) 
             ))}
           </ul>
         ) : (
-          <p className="p-6 text-center text-sm text-ink-500">
-            {q
-              ? "Nenhum cliente encontrado."
-              : "Seus clientes aparecem aqui após o primeiro agendamento."}
-          </p>
+          <EmptyState
+            icon="users"
+            title={q ? "Nenhum cliente encontrado" : "Ainda sem clientes"}
+            text={
+              q
+                ? "Tente outro nome ou parte do telefone."
+                : "Quem agendar ou pedir orçamento entra aqui automaticamente."
+            }
+          />
         )}
       </Card>
     </>

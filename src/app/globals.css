@@ -1,37 +1,148 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--nf-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--nf-display), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--nf-mono), ui-monospace, SFMono-Regular, monospace;
 
-  --color-brand-50: #ecfdf5;
-  --color-brand-100: #d1fae5;
-  --color-brand-200: #a7f3d0;
-  --color-brand-300: #6ee7b7;
-  --color-brand-400: #34d399;
-  --color-brand-500: #10b981;
-  --color-brand-600: #059669;
-  --color-brand-700: #047857;
-  --color-brand-800: #065f46;
-  --color-brand-900: #064e3b;
+  /* Petróleo: cor da marca (botões, links, seleção). */
+  --color-brand-50: #eef7f7;
+  --color-brand-100: #d5ecec;
+  --color-brand-200: #aedada;
+  --color-brand-300: #7dc1c3;
+  --color-brand-400: #46a1a5;
+  --color-brand-500: #1f8387;
+  --color-brand-600: #0f6a6e;
+  --color-brand-700: #0c5559;
+  --color-brand-800: #0a4144;
+  --color-brand-900: #082f32;
 
-  --color-ink-50: #f8fafc;
-  --color-ink-100: #f1f5f9;
-  --color-ink-200: #e2e8f0;
-  --color-ink-300: #cbd5e1;
-  --color-ink-400: #94a3b8;
-  --color-ink-500: #64748b;
-  --color-ink-600: #475569;
-  --color-ink-700: #334155;
-  --color-ink-800: #1e293b;
-  --color-ink-900: #0f172a;
+  /* Âmbar: reservado a "horário livre" e destaques pontuais. */
+  --color-amber-50: #fff8e6;
+  --color-amber-100: #fdefc8;
+  --color-amber-200: #fbe09a;
+  --color-amber-300: #f9cf6c;
+  --color-amber-400: #f6b93b;
+  --color-amber-500: #efa20f;
+  --color-amber-700: #8a5a00;
+  --color-amber-800: #6b4600;
+
+  /* Tinta: neutros levemente esverdeados, combinam com o petróleo. */
+  --color-ink-50: #f4f7f7;
+  --color-ink-100: #e9eeee;
+  --color-ink-200: #d6dedf;
+  --color-ink-300: #b8c4c6;
+  --color-ink-400: #8a9a9d;
+  --color-ink-500: #62767a;
+  --color-ink-600: #45585c;
+  --color-ink-700: #2f4144;
+  --color-ink-800: #1d2e31;
+  --color-ink-900: #0e1b1e;
+
+  --shadow-soft: 0 1px 2px rgb(14 27 30 / 0.04), 0 4px 16px -4px rgb(14 27 30 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(14 27 30 / 0.05), 0 12px 32px -8px rgb(14 27 30 / 0.16);
+
+  --animate-rise: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.5s ease-out both;
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.45;
+      transform: scale(0.8);
+    }
+  }
 }
 
 @layer base {
   html {
     color-scheme: light;
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-ink-50 text-ink-900 antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: var(--color-amber-200);
+    color: var(--color-ink-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Atraso escalonado para entradas em sequência. */
+  .delay-1 {
+    animation-delay: 0.08s;
+  }
+  .delay-2 {
+    animation-delay: 0.16s;
+  }
+  .delay-3 {
+    animation-delay: 0.24s;
+  }
+  .delay-4 {
+    animation-delay: 0.32s;
+  }
+
+  /* Régua de horas: marcações finas repetidas, usada como textura discreta. */
+  .bg-ruler {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 31px,
+      var(--color-ink-200) 31px,
+      var(--color-ink-200) 32px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

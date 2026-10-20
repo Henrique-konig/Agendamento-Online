@@ -21,7 +21,7 @@ export default async function PainelHomePage() {
   const today = instantToLocalDate(new Date(), tz);
 
   const supabase = await createClient();
-  const [services, photos, todayAppointments, newQuotes] = await Promise.all([
+  const [services, photos, todayAppointments, newQuotes, pendingCount] = await Promise.all([
     supabase
       .from("services")
       .select("id", { count: "exact", head: true })
@@ -40,7 +40,22 @@ export default async function PainelHomePage() {
       .select("id", { count: "exact", head: true })
       .eq("professional_id", professional.id)
       .eq("status", "new"),
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("professional_id", professional.id)
+      .eq("status", "pending")
+      .gte("starts_at", new Date().toISOString()),
   ]);
+
+  const activeToday = todayAppointments.filter(
+    (a) => a.status === "pending" || a.status === "confirmed",
+  ).length;
+  const stats = [
+    { label: "Hoje", value: activeToday, hint: activeToday === 1 ? "atendimento" : "atendimentos" },
+    { label: "Aguardando", value: pendingCount.count ?? 0, hint: "para confirmar" },
+    { label: "Orçamentos", value: newQuotes.count ?? 0, hint: "novos pedidos" },
+  ];
 
   const checklist = [
     {
@@ -71,6 +86,26 @@ export default async function PainelHomePage() {
         }
       />
       <div className="space-y-6">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          {stats.map((stat, i) => (
+            <div
+              key={stat.label}
+              className={cn(
+                "animate-rise rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-200/60 sm:p-5",
+                i === 1 && "delay-1",
+                i === 2 && "delay-2",
+              )}
+            >
+              <p className="font-mono text-[11px] tracking-wider text-ink-400 uppercase">
+                {stat.label}
+              </p>
+              <p className="mt-2 font-display text-4xl font-semibold text-ink-900 tabular-nums">
+                {stat.value}
+              </p>
+              <p className="text-xs text-ink-500">{stat.hint}</p>
+            </div>
+          ))}
+        </div>
         <Card>
           <CardHeader
             title="Hoje"

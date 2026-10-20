@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { moveService } from "@/features/services/actions";
 import { listOwnServices } from "@/features/services/queries";
@@ -56,8 +57,13 @@ export default async function ServicesPage() {
           </ul>
         </Card>
       ) : (
-        <Card className="text-center text-sm text-ink-500">
-          Nenhum serviço ainda. Cadastre o primeiro para aparecer na sua página.
+        <Card>
+          <EmptyState
+            icon="tag"
+            title="Cadastre seu primeiro serviço"
+            text="Ele aparece na sua página, com duração e preço, e já pode ser agendado."
+            action={<LinkButton href="/painel/servicos/novo">Novo serviço</LinkButton>}
+          />
         </Card>
       )}
     </>

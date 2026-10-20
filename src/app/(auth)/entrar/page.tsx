@@ -9,7 +9,8 @@ export default async function SignInPage(props: PageProps<"/entrar">) {
   const searchParams = await props.searchParams;
   return (
     <>
-      <h1 className="mb-6 text-xl font-semibold">Entrar no painel</h1>
+      <h1 className="mb-1 text-2xl font-semibold">Bem-vindo de volta</h1>
+      <p className="mb-6 text-sm text-ink-500">Entre para ver a sua agenda.</p>
       {searchParams.erro === "link-invalido" ? (
         <div className="mb-5">
           <Alert tone="error">O link expirou ou é inválido. Entre ou peça um novo link.</Alert>

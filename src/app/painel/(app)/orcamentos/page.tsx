@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { updateQuoteStatus } from "@/features/quotes/actions";
 import { quoteStatusLabel } from "@/features/quotes/schemas";
@@ -89,8 +90,12 @@ export default async function QuotesPage() {
           ))}
         </div>
       ) : (
-        <Card className="text-center text-sm text-ink-500">
-          Nenhum pedido ainda. Marque um serviço como “exige avaliação” para receber orçamentos.
+        <Card>
+          <EmptyState
+            icon="file"
+            title="Nenhum pedido de orçamento"
+            text="Marque um serviço como “exige avaliação” e os pedidos chegam aqui."
+          />
         </Card>
       )}
     </>

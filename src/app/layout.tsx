@@ -1,8 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
+const display = Bricolage_Grotesque({
+  variable: "--nf-display",
+  subsets: ["latin"],
+  display: "swap",
+});
+const body = Instrument_Sans({ variable: "--nf-body", subsets: ["latin"], display: "swap" });
+const mono = JetBrains_Mono({ variable: "--nf-mono", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
@@ -15,12 +21,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#059669",
+  themeColor: "#0f6a6e",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full`}>
+    <html lang="pt-BR" className={`${display.variable} ${body.variable} ${mono.variable} h-full`}>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
