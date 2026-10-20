@@ -7,6 +7,9 @@ import { requireProfessional } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
+import { AppointmentList } from "@/features/appointments/appointment-list";
+import { listAppointments } from "@/features/appointments/queries";
+import { addDays, instantToLocalDate, zonedToInstant } from "@/lib/scheduling/time";
 
 export const metadata: Metadata = { title: "Painel" };
 
@@ -14,8 +17,11 @@ export default async function PainelHomePage() {
   const professional = await requireProfessional();
   const publicUrl = siteUrl(`/${professional.slug}`);
 
+  const tz = professional.timezone;
+  const today = instantToLocalDate(new Date(), tz);
+
   const supabase = await createClient();
-  const [services, photos] = await Promise.all([
+  const [services, photos, todayAppointments, newQuotes] = await Promise.all([
     supabase
       .from("services")
       .select("id", { count: "exact", head: true })
@@ -24,6 +30,16 @@ export default async function PainelHomePage() {
       .from("photos")
       .select("id", { count: "exact", head: true })
       .eq("professional_id", professional.id),
+    listAppointments(
+      professional.id,
+      zonedToInstant(today, 0, tz),
+      zonedToInstant(addDays(today, 1), 0, tz),
+    ),
+    supabase
+      .from("quote_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("professional_id", professional.id)
+      .eq("status", "new"),
   ]);
 
   const checklist = [
@@ -55,6 +71,26 @@ export default async function PainelHomePage() {
         }
       />
       <div className="space-y-6">
+        <Card>
+          <CardHeader
+            title="Hoje"
+            description={
+              newQuotes.count ? `${newQuotes.count} pedido(s) de orçamento novo(s).` : undefined
+            }
+            action={
+              <Link
+                href="/painel/agenda"
+                className="text-brand-700 text-sm font-medium hover:underline"
+              >
+                Ver agenda
+              </Link>
+            }
+          />
+          <AppointmentList
+            appointments={todayAppointments.filter((a) => a.status !== "cancelled")}
+            timeZone={tz}
+          />
+        </Card>
         <Card>
           <CardHeader
             title="Sua página"
