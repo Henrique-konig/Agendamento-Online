@@ -16,6 +16,7 @@ describe("serviceSchema", () => {
       price_cents: 4500,
       price_is_starting: false,
       requires_quote: false,
+      requires_prepayment: false,
       active: true,
     });
   });

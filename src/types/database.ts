@@ -88,6 +88,7 @@ export type Database = {
           price_cents: number | null;
           price_is_starting: boolean;
           requires_quote: boolean;
+          requires_prepayment: boolean;
           active: boolean;
           position: number;
           created_at: string;
@@ -102,6 +103,7 @@ export type Database = {
           price_cents?: number | null;
           price_is_starting?: boolean;
           requires_quote?: boolean;
+          requires_prepayment?: boolean;
           active?: boolean;
           position?: number;
           created_at?: string;
@@ -249,6 +251,13 @@ export type Database = {
           cancelled_at: string | null;
           reminder_sent_at: string | null;
           google_event_id: string | null;
+          payment_status: Database["public"]["Enums"]["payment_status"];
+          payment_amount_cents: number | null;
+          payment_provider: Database["public"]["Enums"]["pix_mode"] | null;
+          payment_provider_id: string | null;
+          payment_expires_at: string | null;
+          pix_copy_paste: string | null;
+          paid_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -268,6 +277,13 @@ export type Database = {
           cancelled_at?: string | null;
           reminder_sent_at?: string | null;
           google_event_id?: string | null;
+          payment_status?: Database["public"]["Enums"]["payment_status"];
+          payment_amount_cents?: number | null;
+          payment_provider?: Database["public"]["Enums"]["pix_mode"] | null;
+          payment_provider_id?: string | null;
+          payment_expires_at?: string | null;
+          pix_copy_paste?: string | null;
+          paid_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -432,6 +448,44 @@ export type Database = {
           },
         ];
       };
+      pix_settings: {
+        Row: {
+          professional_id: string;
+          enabled: boolean;
+          mode: Database["public"]["Enums"]["pix_mode"];
+          pix_key: string | null;
+          merchant_name: string | null;
+          merchant_city: string | null;
+          mp_access_token_enc: string | null;
+          deposit_percent: number;
+          hold_minutes: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          professional_id: string;
+          enabled?: boolean;
+          mode?: Database["public"]["Enums"]["pix_mode"];
+          pix_key?: string | null;
+          merchant_name?: string | null;
+          merchant_city?: string | null;
+          mp_access_token_enc?: string | null;
+          deposit_percent?: number;
+          hold_minutes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["pix_settings"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "pix_settings_professional_id_fkey";
+            columns: ["professional_id"];
+            isOneToOne: true;
+            referencedRelation: "professionals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -439,12 +493,18 @@ export type Database = {
         Args: { rules: Json };
         Returns: undefined;
       };
+      expire_unpaid_appointments: {
+        Args: { p_professional_id?: string | null };
+        Returns: string[];
+      };
     };
     Enums: {
       appointment_status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
       quote_status: "new" | "contacted" | "scheduled" | "closed";
       notification_channel: "email" | "whatsapp";
       notification_status: "sent" | "failed" | "skipped";
+      pix_mode: "manual" | "mercadopago";
+      payment_status: "not_required" | "pending" | "paid" | "expired" | "refunded";
     };
     CompositeTypes: { [_ in never]: never };
   };

@@ -96,11 +96,11 @@ function Toggle({
         name={name}
         defaultChecked={defaultChecked && !disabled}
         disabled={disabled}
-        className="border-ink-300 mt-0.5 size-4 rounded"
+        className="mt-0.5 size-4 rounded border-ink-300"
       />
       <span className={disabled ? "opacity-60" : undefined}>
-        <span className="text-ink-900 font-medium">{title}</span>
-        {description ? <span className="text-ink-500 block">{description}</span> : null}
+        <span className="font-medium text-ink-900">{title}</span>
+        {description ? <span className="block text-ink-500">{description}</span> : null}
       </span>
     </label>
   );

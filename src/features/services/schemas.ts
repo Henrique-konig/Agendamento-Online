@@ -25,6 +25,7 @@ export const serviceSchema = z.object({
     }),
   price_is_starting: checkbox,
   requires_quote: checkbox,
+  requires_prepayment: checkbox,
   active: checkbox,
 });
 

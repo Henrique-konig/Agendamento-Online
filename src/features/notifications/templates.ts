@@ -9,6 +9,8 @@ export type AppointmentContext = {
   endsAt: string;
   priceCents: number | null;
   status: string;
+  paymentStatus?: string;
+  paymentAmountCents?: number | null;
   notes: string | null;
   client: { name: string; phone: string; email: string | null };
   professional: {
@@ -91,7 +93,30 @@ function appointmentDetails(ctx: AppointmentContext, extra: Detail[] = []): Deta
 
 const FOOTER = "Mensagem automática enviada pela Agenda Autônomo.";
 
+function paymentDetails(ctx: AppointmentContext): Detail[] {
+  if (!ctx.paymentAmountCents) return [];
+  const label =
+    ctx.paymentStatus === "paid"
+      ? "Pago via Pix"
+      : ctx.paymentStatus === "pending"
+        ? "Pix pendente"
+        : "Pix";
+  return [[label, formatBRL(ctx.paymentAmountCents)]];
+}
+
 export function clientConfirmationEmail(ctx: AppointmentContext): RenderedEmail {
+  if (ctx.paymentStatus === "pending") {
+    return {
+      subject: `Finalize seu agendamento com o Pix — ${ctx.professional.displayName}`,
+      ...layout({
+        heading: "Falta pouco: pague o Pix",
+        intro: `Olá, ${ctx.client.name}! Seu horário está reservado. Ele é confirmado assim que o pagamento via Pix for recebido.`,
+        details: appointmentDetails(ctx, paymentDetails(ctx)),
+        cta: { label: "Ver código Pix", url: ctx.manageUrl },
+        footer: FOOTER,
+      }),
+    };
+  }
   const pending = ctx.status === "pending";
   const subject = pending
     ? `Recebemos seu pedido de agendamento — ${ctx.professional.displayName}`
@@ -103,7 +128,7 @@ export function clientConfirmationEmail(ctx: AppointmentContext): RenderedEmail 
       intro: pending
         ? `Olá, ${ctx.client.name}! ${ctx.professional.displayName} vai confirmar seu horário em breve.`
         : `Olá, ${ctx.client.name}! Seu horário com ${ctx.professional.displayName} está marcado.`,
-      details: appointmentDetails(ctx),
+      details: appointmentDetails(ctx, paymentDetails(ctx)),
       cta: { label: "Ver ou cancelar agendamento", url: ctx.manageUrl },
       footer: FOOTER,
     }),
@@ -117,10 +142,15 @@ export function professionalNewBookingEmail(ctx: AppointmentContext): RenderedEm
     ...layout({
       heading: "Novo agendamento",
       intro:
-        ctx.status === "pending"
-          ? `${ctx.client.name} pediu um horário. Confirme no painel.`
-          : `${ctx.client.name} agendou um horário com você.`,
+        ctx.paymentStatus === "pending"
+          ? `${ctx.client.name} reservou um horário e está pagando o Pix.`
+          : ctx.paymentStatus === "paid"
+            ? `${ctx.client.name} pagou o Pix — horário confirmado.`
+            : ctx.status === "pending"
+              ? `${ctx.client.name} pediu um horário. Confirme no painel.`
+              : `${ctx.client.name} agendou um horário com você.`,
       details: appointmentDetails(ctx, [
+        ...paymentDetails(ctx),
         ["Cliente", ctx.client.name],
         ["WhatsApp", formatPhoneBR(ctx.client.phone)],
         ...(ctx.client.email ? ([["E-mail", ctx.client.email]] as Detail[]) : []),

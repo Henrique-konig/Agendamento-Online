@@ -48,6 +48,17 @@ describe("templates de e-mail", () => {
     expect(email.text).toContain("Confirme no painel");
   });
 
+  it("com Pix pendente, pede o pagamento em vez de confirmar", () => {
+    const email = clientConfirmationEmail({
+      ...ctx,
+      status: "pending",
+      paymentStatus: "pending",
+      paymentAmountCents: 1500,
+    });
+    expect(email.subject).toMatch(/^Finalize seu agendamento com o Pix/);
+    expect(email.text).toMatch(/Pix pendente: R\$\s15,00/);
+  });
+
   it("lembrete cita o horário de amanhã", () => {
     expect(reminderEmail(ctx).subject).toBe("Lembrete: amanhã às 09:00 com Barbearia do Zé");
   });

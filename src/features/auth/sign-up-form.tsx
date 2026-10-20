@@ -33,9 +33,9 @@ export function SignUpForm() {
       <SubmitButton className="w-full" pendingText="Criando conta…">
         Criar conta
       </SubmitButton>
-      <p className="text-ink-500 text-center text-sm">
+      <p className="text-center text-sm text-ink-500">
         Já tem conta?{" "}
-        <Link href="/entrar" className="text-brand-700 font-medium hover:underline">
+        <Link href="/entrar" className="font-medium text-brand-700 hover:underline">
           Entrar
         </Link>
       </p>

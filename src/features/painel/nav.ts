@@ -13,4 +13,5 @@ export const painelNav: NavItem[] = [
   { href: "/painel/fotos", label: "Fotos" },
   { href: "/painel/notificacoes", label: "Notificações" },
   { href: "/painel/integracoes", label: "Integrações" },
+  { href: "/painel/pagamentos", label: "Pagamentos" },
 ];

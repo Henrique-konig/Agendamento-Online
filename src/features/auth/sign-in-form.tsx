@@ -31,9 +31,9 @@ export function SignInForm({ next }: { next?: string }) {
       <SubmitButton className="w-full" pendingText="Entrando…">
         Entrar
       </SubmitButton>
-      <p className="text-ink-500 text-center text-sm">
+      <p className="text-center text-sm text-ink-500">
         Ainda não tem conta?{" "}
-        <Link href="/cadastro" className="text-brand-700 font-medium hover:underline">
+        <Link href="/cadastro" className="font-medium text-brand-700 hover:underline">
           Criar conta
         </Link>
       </p>

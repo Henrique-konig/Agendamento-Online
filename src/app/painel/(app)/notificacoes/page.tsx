@@ -55,7 +55,7 @@ export default async function NotificationsPage() {
         <Card>
           <CardHeader title="Últimos envios" />
           {log?.length ? (
-            <ul className="divide-ink-100 divide-y text-sm">
+            <ul className="divide-y divide-ink-100 text-sm">
               {log.map((entry) => (
                 <li
                   key={entry.id}
@@ -84,7 +84,7 @@ export default async function NotificationsPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-ink-500 text-sm">Nenhum envio ainda.</p>
+            <p className="text-sm text-ink-500">Nenhum envio ainda.</p>
           )}
         </Card>
       </div>

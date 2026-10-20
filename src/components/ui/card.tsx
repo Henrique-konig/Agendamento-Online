@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils/cn";
 export function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn("ring-ink-200/70 rounded-2xl bg-white p-6 shadow-xs ring-1", className)}
+      className={cn("rounded-2xl bg-white p-6 shadow-xs ring-1 ring-ink-200/70", className)}
       {...props}
     />
   );
@@ -22,8 +22,8 @@ export function CardHeader({
   return (
     <div className="mb-5 flex items-start justify-between gap-4">
       <div>
-        <h2 className="text-ink-900 text-base font-semibold">{title}</h2>
-        {description ? <p className="text-ink-500 mt-1 text-sm">{description}</p> : null}
+        <h2 className="text-base font-semibold text-ink-900">{title}</h2>
+        {description ? <p className="mt-1 text-sm text-ink-500">{description}</p> : null}
       </div>
       {action}
     </div>

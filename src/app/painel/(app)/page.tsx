@@ -80,7 +80,7 @@ export default async function PainelHomePage() {
             action={
               <Link
                 href="/painel/agenda"
-                className="text-brand-700 text-sm font-medium hover:underline"
+                className="text-sm font-medium text-brand-700 hover:underline"
               >
                 Ver agenda
               </Link>
@@ -100,7 +100,7 @@ export default async function PainelHomePage() {
                 : "Ainda não publicada."
             }
           />
-          <p className="text-ink-700 font-mono text-sm break-all">{publicUrl}</p>
+          <p className="font-mono text-sm break-all text-ink-700">{publicUrl}</p>
         </Card>
 
         {checklist.some((item) => !item.done) ? (
@@ -113,7 +113,7 @@ export default async function PainelHomePage() {
                     aria-hidden
                     className={cn(
                       "grid size-5 place-items-center rounded-full text-xs",
-                      item.done ? "bg-brand-600 text-white" : "ring-ink-300 ring-1",
+                      item.done ? "bg-brand-600 text-white" : "ring-1 ring-ink-300",
                     )}
                   >
                     {item.done ? "✓" : ""}

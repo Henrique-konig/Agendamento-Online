@@ -46,11 +46,11 @@ export function ProfileImageField({ kind, label, professionalId, currentPath }: 
 
   return (
     <div className="space-y-2">
-      <p className="text-ink-800 text-sm font-medium">{label}</p>
+      <p className="text-sm font-medium text-ink-800">{label}</p>
       <div className="flex items-center gap-4">
         <div
           className={cn(
-            "bg-ink-100 ring-ink-200 relative overflow-hidden ring-1",
+            "relative overflow-hidden bg-ink-100 ring-1 ring-ink-200",
             kind === "avatar" ? "size-20 rounded-full" : "h-20 w-36 rounded-lg",
           )}
         >

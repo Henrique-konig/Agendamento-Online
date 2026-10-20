@@ -1,9 +1,12 @@
 import "server-only";
+import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { expireUnpaid } from "@/features/payments/expire";
 import { computeAvailableSlots, isSlotAvailable, type SlotOptions } from "@/lib/scheduling/slots";
 import { addDays, instantToLocalDate, zonedToInstant } from "@/lib/scheduling/time";
 import type { Database, Tables } from "@/types/database";
 import { collectBusy } from "./busy";
+import { emitBookingEvent } from "./notify";
 
 type Professional = Tables<"professionals">;
 type Service = Pick<Tables<"services">, "duration_minutes">;
@@ -15,6 +18,14 @@ export async function loadSlotOptions(
   service: Service,
   now = new Date(),
 ): Promise<Omit<SlotOptions, "onlyDate">> {
+  // Reservas com Pix vencido liberam o horário antes do cálculo.
+  const expired = await expireUnpaid(supabase, professional.id);
+  if (expired.length) {
+    after(() =>
+      Promise.all(expired.map((id) => emitBookingEvent({ type: "cancelled", appointmentId: id }))),
+    );
+  }
+
   const tz = professional.timezone;
   const today = instantToLocalDate(now, tz);
   const from = zonedToInstant(today, 0, tz);

@@ -53,6 +53,7 @@ const integrationsSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().min(1).optional(),
+  PAYMENT_ENCRYPTION_KEY: z.string().min(1).optional(),
 });
 
 export type IntegrationsEnv = z.infer<typeof integrationsSchema>;
@@ -71,6 +72,7 @@ export function integrationsEnv(): IntegrationsEnv {
     GOOGLE_CLIENT_ID: empty(process.env.GOOGLE_CLIENT_ID),
     GOOGLE_CLIENT_SECRET: empty(process.env.GOOGLE_CLIENT_SECRET),
     GOOGLE_TOKEN_ENCRYPTION_KEY: empty(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY),
+    PAYMENT_ENCRYPTION_KEY: empty(process.env.PAYMENT_ENCRYPTION_KEY),
   });
   if (!parsed.success) throw new Error(`Variáveis de ambiente inválidas: ${format(parsed.error)}`);
   return parsed.data;

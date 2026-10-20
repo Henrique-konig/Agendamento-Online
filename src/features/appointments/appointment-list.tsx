@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { confirmPixPayment } from "@/features/payments/actions";
+import { formatBRL } from "@/lib/format/money";
 import { updateAppointmentStatus } from "./actions";
 import type { AppointmentListItem } from "./queries";
 import { appointmentStatusLabel, appointmentStatusTone } from "@/features/booking/status";
@@ -12,23 +14,23 @@ export function AppointmentList({ appointments, timeZone, now = new Date() }: Pr
   const f = dateFormatters(timeZone);
 
   if (!appointments.length) {
-    return <p className="text-ink-500 py-8 text-center text-sm">Nenhum agendamento.</p>;
+    return <p className="py-8 text-center text-sm text-ink-500">Nenhum agendamento.</p>;
   }
 
   return (
-    <ul className="divide-ink-100 divide-y">
+    <ul className="divide-y divide-ink-100">
       {appointments.map((a) => {
         const past = new Date(a.ends_at) < now;
         const active = a.status === "pending" || a.status === "confirmed";
         return (
           <li key={a.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start">
             <div className="w-24 shrink-0">
-              <p className="text-ink-900 font-semibold tabular-nums">{f.time(a.starts_at)}</p>
-              <p className="text-ink-500 text-xs tabular-nums">até {f.time(a.ends_at)}</p>
+              <p className="font-semibold text-ink-900 tabular-nums">{f.time(a.starts_at)}</p>
+              <p className="text-xs text-ink-500 tabular-nums">até {f.time(a.ends_at)}</p>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-ink-900 font-medium">{a.service_name}</p>
+                <p className="font-medium text-ink-900">{a.service_name}</p>
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-xs ring-1",
@@ -37,9 +39,22 @@ export function AppointmentList({ appointments, timeZone, now = new Date() }: Pr
                 >
                   {appointmentStatusLabel[a.status]}
                 </span>
+                {a.payment_status === "pending" || a.payment_status === "paid" ? (
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-xs ring-1",
+                      a.payment_status === "paid"
+                        ? "bg-brand-50 text-brand-800 ring-brand-200"
+                        : "bg-amber-50 text-amber-800 ring-amber-200",
+                    )}
+                  >
+                    {a.payment_status === "paid" ? "Pix pago" : "Aguardando Pix"} ·{" "}
+                    {formatBRL(a.payment_amount_cents ?? 0)}
+                  </span>
+                ) : null}
               </div>
               {a.client ? (
-                <p className="text-ink-600 mt-0.5 text-sm">
+                <p className="mt-0.5 text-sm text-ink-600">
                   <Link href={`/painel/clientes/${a.client.id}`} className="hover:underline">
                     {a.client.name}
                   </Link>{" "}
@@ -54,11 +69,21 @@ export function AppointmentList({ appointments, timeZone, now = new Date() }: Pr
                   </a>
                 </p>
               ) : null}
-              {a.notes ? <p className="text-ink-500 mt-1 text-sm italic">“{a.notes}”</p> : null}
+              {a.notes ? <p className="mt-1 text-sm text-ink-500 italic">“{a.notes}”</p> : null}
             </div>
             {active ? (
               <div className="flex flex-wrap gap-1">
-                {a.status === "pending" ? (
+                {a.payment_status === "pending" && a.payment_provider === "manual" ? (
+                  <form action={confirmPixPayment}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <button
+                      type="submit"
+                      className="rounded-md bg-brand-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-700"
+                    >
+                      Pix recebido
+                    </button>
+                  </form>
+                ) : a.status === "pending" && a.payment_status !== "pending" ? (
                   <StatusButton id={a.id} status="confirmed" label="Confirmar" />
                 ) : null}
                 {past ? (

@@ -57,6 +57,8 @@ export async function loadAppointmentContext(
       endsAt: data.ends_at,
       priceCents: data.price_cents,
       status: data.status,
+      paymentStatus: data.payment_status,
+      paymentAmountCents: data.payment_amount_cents,
       notes: data.notes,
       client: data.client,
       professional: {
@@ -141,6 +143,36 @@ export async function notifyBookingCreated(appointmentId: string) {
         ...professionalNewBookingEmail(ctx),
         replyTo: ctx.client.email ?? undefined,
         idempotencyKey: `new-booking-${appointmentId}`,
+      },
+    );
+  }
+}
+
+/** Pagamento antecipado confirmado: confirmação ao cliente e aviso ao profissional. */
+export async function notifyPaymentConfirmed(appointmentId: string) {
+  const admin = createAdminClient();
+  const loaded = await loadAppointmentContext(admin, appointmentId);
+  if (!loaded) return;
+  const { ctx, professional } = loaded;
+  const meta = { professionalId: professional.id, appointmentId };
+
+  await email(
+    admin,
+    { ...meta, kind: "payment_confirmed_client" },
+    {
+      to: ctx.client.email,
+      ...clientConfirmationEmail(ctx),
+      idempotencyKey: `paid-client-${appointmentId}`,
+    },
+  );
+  if (professional.notify_new_booking) {
+    await email(
+      admin,
+      { ...meta, kind: "payment_confirmed_professional" },
+      {
+        to: loaded.professionalEmail,
+        ...professionalNewBookingEmail(ctx),
+        idempotencyKey: `paid-pro-${appointmentId}`,
       },
     );
   }

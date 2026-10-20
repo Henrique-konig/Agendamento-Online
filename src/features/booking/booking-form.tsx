@@ -16,9 +16,11 @@ type Props = {
   serviceId: string;
   timeZone: string;
   days: SerializedDay[];
+  /** Sinal via Pix exigido para confirmar o horário. */
+  prepayment?: { amountLabel: string; holdMinutes: number; requireEmail: boolean };
 };
 
-export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
+export function BookingForm({ slug, serviceId, timeZone, days, prepayment }: Props) {
   const [state, action] = useActionState(createBooking, initialActionState);
   const f = useMemo(() => dateFormatters(timeZone), [timeZone]);
   const firstAvailable = days.find((d) => d.slots.length)?.date ?? null;
@@ -29,7 +31,7 @@ export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
 
   if (!firstAvailable) {
     return (
-      <p className="text-ink-600 ring-ink-200 rounded-xl bg-white p-6 text-center text-sm ring-1">
+      <p className="rounded-xl bg-white p-6 text-center text-sm text-ink-600 ring-1 ring-ink-200">
         Não há horários livres nos próximos dias. Entre em contato diretamente.
       </p>
     );
@@ -49,8 +51,9 @@ export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
 
       <FormMessage ok={state.ok} message={state.message} />
 
-      <fieldset>
-        <legend className="text-ink-900 mb-3 text-sm font-semibold">1. Escolha o dia</legend>
+      {/* min-w-0: por padrão um fieldset cresce até caber o conteúdo e estoura a página. */}
+      <fieldset className="min-w-0">
+        <legend className="mb-3 text-sm font-semibold text-ink-900">1. Escolha o dia</legend>
         <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
           {days.map((day) => {
             const anchor = localDateAnchor(day.date);
@@ -69,9 +72,9 @@ export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
                 className={cn(
                   "flex w-16 shrink-0 flex-col items-center rounded-xl py-2 text-sm ring-1 transition-colors",
                   active
-                    ? "bg-brand-600 ring-brand-600 text-white"
-                    : "text-ink-800 ring-ink-200 hover:ring-brand-400 bg-white",
-                  !available && "hover:ring-ink-200 cursor-not-allowed opacity-40",
+                    ? "bg-brand-600 text-white ring-brand-600"
+                    : "bg-white text-ink-800 ring-ink-200 hover:ring-brand-400",
+                  !available && "cursor-not-allowed opacity-40 hover:ring-ink-200",
                 )}
               >
                 <span className="text-xs capitalize">{f.weekdayShort(anchor)}</span>
@@ -84,8 +87,8 @@ export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
       </fieldset>
 
       {selectedDay ? (
-        <fieldset>
-          <legend className="text-ink-900 mb-3 text-sm font-semibold">
+        <fieldset className="min-w-0">
+          <legend className="mb-3 text-sm font-semibold text-ink-900">
             2. Escolha o horário · {capitalize(f.long(localDateAnchor(selectedDay.date)))}
           </legend>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
@@ -98,8 +101,8 @@ export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
                 className={cn(
                   "rounded-lg py-2 text-sm font-medium ring-1 transition-colors",
                   slot === s
-                    ? "bg-brand-600 ring-brand-600 text-white"
-                    : "text-ink-800 ring-ink-200 hover:ring-brand-400 bg-white",
+                    ? "bg-brand-600 text-white ring-brand-600"
+                    : "bg-white text-ink-800 ring-ink-200 hover:ring-brand-400",
                 )}
               >
                 {f.time(s)}
@@ -110,8 +113,8 @@ export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
         </fieldset>
       ) : null}
 
-      <fieldset className={cn("space-y-5", !slot && "pointer-events-none opacity-50")}>
-        <legend className="text-ink-900 mb-3 text-sm font-semibold">3. Seus dados</legend>
+      <fieldset className={cn("min-w-0 space-y-5", !slot && "pointer-events-none opacity-50")}>
+        <legend className="mb-3 text-sm font-semibold text-ink-900">3. Seus dados</legend>
         <Field label="Nome" name="name" errors={e.name}>
           <Input id="name" name="name" autoComplete="name" required />
         </Field>
@@ -131,14 +134,35 @@ export function BookingForm({ slug, serviceId, timeZone, days }: Props) {
             required
           />
         </Field>
-        <Field label="E-mail (opcional)" name="email" errors={e.email}>
-          <Input id="email" name="email" type="email" autoComplete="email" />
+        <Field
+          label={prepayment?.requireEmail ? "E-mail" : "E-mail (opcional)"}
+          name="email"
+          errors={e.email}
+        >
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required={prepayment?.requireEmail}
+          />
         </Field>
         <Field label="Observações (opcional)" name="notes" errors={e.notes}>
           <Textarea id="notes" name="notes" rows={3} maxLength={1000} />
         </Field>
+        {prepayment ? (
+          <p className="rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-900 ring-1 ring-brand-200">
+            Para garantir o horário, é cobrado um sinal de <strong>{prepayment.amountLabel}</strong>{" "}
+            via Pix. O horário fica reservado por {prepayment.holdMinutes} minutos aguardando o
+            pagamento.
+          </p>
+        ) : null}
         <SubmitButton size="lg" className="w-full" disabled={!slot} pendingText="Reservando…">
-          {slot ? `Confirmar ${f.time(slot)}` : "Escolha um horário"}
+          {!slot
+            ? "Escolha um horário"
+            : prepayment
+              ? `Reservar ${f.time(slot)} e pagar Pix`
+              : `Confirmar ${f.time(slot)}`}
         </SubmitButton>
       </fieldset>
     </form>

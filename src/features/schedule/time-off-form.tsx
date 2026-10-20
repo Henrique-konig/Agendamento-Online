@@ -23,13 +23,13 @@ export function TimeOffForm({ today }: { today: string }) {
         />
         <div className="space-y-5">
           <FormMessage ok={state.ok} message={state.message} />
-          <label className="text-ink-700 flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm text-ink-700">
             <input
               type="checkbox"
               name="all_day"
               checked={allDay}
               onChange={(ev) => setAllDay(ev.target.checked)}
-              className="border-ink-300 size-4 rounded"
+              className="size-4 rounded border-ink-300"
             />
             Dia inteiro
           </label>

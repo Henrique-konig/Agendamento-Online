@@ -55,7 +55,7 @@ export function GalleryManager({
       {error ? <Alert tone="error">{error}</Alert> : null}
 
       <div className="flex items-center justify-between gap-4">
-        <p className="text-ink-500 text-sm">
+        <p className="text-sm text-ink-500">
           {photos.length} de {maxPhotos} fotos · JPG, PNG ou WebP até 5 MB
         </p>
         <Button disabled={pending || remaining <= 0} onClick={() => inputRef.current?.click()}>
@@ -78,8 +78,8 @@ export function GalleryManager({
       {photos.length ? (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {photos.map((photo) => (
-            <li key={photo.id} className="ring-ink-200 overflow-hidden rounded-xl bg-white ring-1">
-              <div className="bg-ink-100 relative aspect-square">
+            <li key={photo.id} className="overflow-hidden rounded-xl bg-white ring-1 ring-ink-200">
+              <div className="relative aspect-square bg-ink-100">
                 <Image
                   src={publicMediaUrl(photo.storage_path) ?? ""}
                   alt={photo.caption ?? ""}
@@ -94,7 +94,7 @@ export function GalleryManager({
                   maxLength={140}
                   placeholder="Legenda (opcional)"
                   aria-label="Legenda"
-                  className="ring-ink-200 focus:ring-brand-600 w-full rounded-md border-0 px-2 py-1 text-sm ring-1 focus:ring-2"
+                  className="w-full rounded-md border-0 px-2 py-1 text-sm ring-1 ring-ink-200 focus:ring-2 focus:ring-brand-600"
                   onBlur={(e) => {
                     if (e.target.value !== (photo.caption ?? "")) {
                       void updatePhotoCaption(photo.id, e.target.value);
@@ -114,7 +114,7 @@ export function GalleryManager({
           ))}
         </ul>
       ) : (
-        <div className="border-ink-200 text-ink-500 rounded-xl border-2 border-dashed p-12 text-center text-sm">
+        <div className="rounded-xl border-2 border-dashed border-ink-200 p-12 text-center text-sm text-ink-500">
           Mostre seu trabalho: ambiente, antes e depois, resultados.
         </div>
       )}

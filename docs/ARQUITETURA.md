@@ -60,6 +60,9 @@ A conversão acontece em um único módulo puro e testado.
   [`GOOGLE-AGENDA.md`](GOOGLE-AGENDA.md).
 - **Notificações** (`features/notifications/`): outro ouvinte do mesmo
   barramento. Veja [`LEMBRETES.md`](LEMBRETES.md).
+- **Pix** (`features/payments/`): cobrança gerada logo após a reserva;
+  confirmação manual ou por webhook emite o evento `paid`. Veja
+  [`PIX.md`](PIX.md).
 
 Integrações são opcionais: sem as variáveis de ambiente, ficam desligadas e o
 restante do sistema funciona normalmente.

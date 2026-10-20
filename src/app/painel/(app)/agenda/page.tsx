@@ -54,8 +54,8 @@ export default async function AgendaPage(props: PageProps<"/painel/agenda">) {
         </div>
       ) : null}
       <Card>
-        <div className="border-ink-100 mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-          <h2 className="text-ink-900 font-semibold">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 pb-4">
+          <h2 className="font-semibold text-ink-900">
             {day === today ? "Hoje · " : ""}
             {capitalize(f.long(localDateAnchor(day)))}
           </h2>

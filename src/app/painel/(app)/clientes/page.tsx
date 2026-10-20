@@ -44,18 +44,18 @@ export default async function ClientsPage(props: PageProps<"/painel/clientes">) 
       </form>
       <Card className="p-0">
         {clients?.length ? (
-          <ul className="divide-ink-100 divide-y">
+          <ul className="divide-y divide-ink-100">
             {clients.map((c) => (
               <li key={c.id}>
                 <Link
                   href={`/painel/clientes/${c.id}`}
-                  className="hover:bg-ink-50 flex items-center justify-between gap-4 px-6 py-4"
+                  className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-ink-50"
                 >
                   <span>
-                    <span className="text-ink-900 block font-medium">{c.name}</span>
-                    <span className="text-ink-500 text-sm">{formatPhoneBR(c.phone)}</span>
+                    <span className="block font-medium text-ink-900">{c.name}</span>
+                    <span className="text-sm text-ink-500">{formatPhoneBR(c.phone)}</span>
                   </span>
-                  <span className="text-ink-500 text-xs">
+                  <span className="text-xs text-ink-500">
                     {c.appointments[0]?.count ?? 0} agendamento(s)
                   </span>
                 </Link>
@@ -63,7 +63,7 @@ export default async function ClientsPage(props: PageProps<"/painel/clientes">) 
             ))}
           </ul>
         ) : (
-          <p className="text-ink-500 p-6 text-center text-sm">
+          <p className="p-6 text-center text-sm text-ink-500">
             {q
               ? "Nenhum cliente encontrado."
               : "Seus clientes aparecem aqui após o primeiro agendamento."}
