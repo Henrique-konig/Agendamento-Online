@@ -30,29 +30,53 @@ const integrationsSchema = z.object({
 
 export type IntegrationsEnv = z.infer<typeof integrationsSchema>;
 
-/** Integrações opcionais: cada uma fica desativada se suas variáveis faltarem. */
+export type EnvProblem = { name: string; message: string };
+
+const integrationKeys = Object.keys(integrationsSchema.shape) as (keyof IntegrationsEnv)[];
+
+/**
+ * Lê as integrações opcionais variável por variável: uma variável inválida
+ * (ex.: CRON_SECRET curto) desativa só o que depende dela, em vez de derrubar
+ * e-mail, lembretes e pagamentos juntos. Os problemas ficam em `envProblems`.
+ */
+export function readIntegrationsEnv(source: Record<string, string | undefined>): {
+  env: IntegrationsEnv;
+  problems: EnvProblem[];
+} {
+  const values: Record<string, unknown> = {};
+  const problems: EnvProblem[] = [];
+  for (const key of integrationKeys) {
+    const raw = source[key] || undefined; // "" conta como ausente
+    const result = integrationsSchema.shape[key].safeParse(raw);
+    if (result.success) {
+      values[key] = result.data;
+      continue;
+    }
+    problems.push({ name: key, message: format(result.error) });
+    // Cai no padrão da variável (ou ausente) sem repetir o valor inválido.
+    values[key] = integrationsSchema.shape[key].safeParse(undefined).data;
+  }
+  return { env: values as IntegrationsEnv, problems };
+}
+
+let warned = false;
+
+/** Integrações opcionais: cada uma fica desativada se suas variáveis faltarem ou forem inválidas. */
 export function integrationsEnv(): IntegrationsEnv {
-  const empty = (v: string | undefined) => (v ? v : undefined);
-  const parsed = integrationsSchema.safeParse({
-    SMTP_HOST: empty(process.env.SMTP_HOST),
-    SMTP_PORT: empty(process.env.SMTP_PORT),
-    SMTP_USER: empty(process.env.SMTP_USER),
-    SMTP_PASSWORD: empty(process.env.SMTP_PASSWORD),
-    RESEND_API_KEY: empty(process.env.RESEND_API_KEY),
-    EMAIL_FROM: empty(process.env.EMAIL_FROM),
-    CRON_SECRET: empty(process.env.CRON_SECRET),
-    WHATSAPP_TOKEN: empty(process.env.WHATSAPP_TOKEN),
-    WHATSAPP_PHONE_NUMBER_ID: empty(process.env.WHATSAPP_PHONE_NUMBER_ID),
-    WHATSAPP_REMINDER_TEMPLATE: empty(process.env.WHATSAPP_REMINDER_TEMPLATE),
-    WHATSAPP_TEMPLATE_LANGUAGE: empty(process.env.WHATSAPP_TEMPLATE_LANGUAGE),
-    BLOB_READ_WRITE_TOKEN: empty(process.env.BLOB_READ_WRITE_TOKEN),
-    GOOGLE_CLIENT_ID: empty(process.env.GOOGLE_CLIENT_ID),
-    GOOGLE_CLIENT_SECRET: empty(process.env.GOOGLE_CLIENT_SECRET),
-    GOOGLE_TOKEN_ENCRYPTION_KEY: empty(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY),
-    PAYMENT_ENCRYPTION_KEY: empty(process.env.PAYMENT_ENCRYPTION_KEY),
-  });
-  if (!parsed.success) throw new Error(`Variáveis de ambiente inválidas: ${format(parsed.error)}`);
-  return parsed.data;
+  const { env, problems } = readIntegrationsEnv(process.env);
+  if (problems.length && !warned) {
+    warned = true;
+    console.error(
+      "[env] variáveis ignoradas por serem inválidas:",
+      problems.map((p) => `${p.name} (${p.message})`).join("; "),
+    );
+  }
+  return env;
+}
+
+/** Variáveis opcionais que estão preenchidas, mas inválidas (para avisar no painel). */
+export function envProblems(): EnvProblem[] {
+  return readIntegrationsEnv(process.env).problems;
 }
 
 /** URL absoluta do site. */
