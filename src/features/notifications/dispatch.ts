@@ -13,6 +13,7 @@ import {
   professionalNewBookingEmail,
   reminderEmail,
   reminderWhatsAppParams,
+  rescheduleEmail,
   type AppointmentContext,
 } from "./templates";
 
@@ -189,6 +190,36 @@ export async function notifyBookingCancelled(appointmentId: string) {
         to: loaded.professionalEmail,
         ...cancellationEmail(ctx, "professional"),
         idempotencyKey: `cancel-pro-${appointmentId}`,
+      },
+    );
+  }
+}
+
+/** O cliente remarcou: avisa o cliente (confirmação) e o profissional. */
+export async function notifyBookingRescheduled(appointmentId: string, previousStartsAt: string) {
+  const loaded = await loadAppointmentContext(appointmentId);
+  if (!loaded) return;
+  const { ctx, professional } = loaded;
+  const meta = { professionalId: professional.id, appointmentId };
+  // A chave inclui o novo horário: cada remarcação é um envio distinto.
+  const key = `${appointmentId}-${new Date(ctx.startsAt).getTime()}`;
+
+  await email(
+    { ...meta, kind: "reschedule_client" },
+    {
+      to: ctx.client.email,
+      ...rescheduleEmail(ctx, "client", previousStartsAt),
+      idempotencyKey: `reschedule-client-${key}`,
+    },
+  );
+  if (professional.notify_new_booking) {
+    await email(
+      { ...meta, kind: "reschedule_professional" },
+      {
+        to: loaded.professionalEmail,
+        ...rescheduleEmail(ctx, "professional", previousStartsAt),
+        replyTo: ctx.client.email ?? undefined,
+        idempotencyKey: `reschedule-pro-${key}`,
       },
     );
   }

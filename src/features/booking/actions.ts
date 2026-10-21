@@ -13,7 +13,12 @@ import { createCharge } from "@/features/payments/charge";
 import { getPixSettings, isPixReady } from "@/features/payments/settings";
 import { checkSlot } from "./availability";
 import { emitBookingEvent } from "./notify";
-import { ACTIVE_STATUSES, canClientCancel } from "./policy";
+import {
+  ACTIVE_STATUSES,
+  canClientCancel,
+  canClientReschedule,
+  CLIENT_CANCEL_LIMIT_MINUTES,
+} from "./policy";
 import { bookingSchema } from "./schemas";
 
 const MAX_BOOKINGS_PER_HOUR = 3;
@@ -147,4 +152,84 @@ export async function cancelBookingByToken(formData: FormData): Promise<void> {
   after(() => emitBookingEvent({ type: "cancelled", appointmentId: appointment.id }));
   revalidatePath("/painel", "layout");
   redirect(`/${appointment.professional.slug}/agendamento/${token.data}`);
+}
+
+const rescheduleSchema = z.object({
+  token: z.uuid(),
+  starts_at: z.iso.datetime({ message: "Escolha um horário." }),
+});
+
+/** Remarcação pelo cliente, a partir do link secreto: mantém serviço e duração, troca o horário. */
+export async function rescheduleBookingByToken(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = rescheduleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return fromZodError(parsed.error);
+  const { token, starts_at } = parsed.data;
+
+  const appointment = await db.appointment.findUnique({
+    where: { cancel_token: token },
+    include: { professional: true },
+  });
+  if (!appointment || !(ACTIVE_STATUSES as readonly string[]).includes(appointment.status)) {
+    return { ok: false, message: "Este agendamento não pode mais ser remarcado." };
+  }
+  const { professional } = appointment;
+  if (!professional.booking_enabled) {
+    return { ok: false, message: "Fale direto com o profissional para remarcar." };
+  }
+  if (!canClientReschedule(appointment.starts_at)) {
+    return {
+      ok: false,
+      message: `A remarcação online é aceita até ${CLIENT_CANCEL_LIMIT_MINUTES / 60} horas antes. Fale direto com o profissional.`,
+    };
+  }
+  if (appointment.payment_status === "pending") {
+    return { ok: false, message: "Conclua ou aguarde o Pix antes de remarcar." };
+  }
+
+  const newStart = new Date(starts_at);
+  if (newStart.getTime() === appointment.starts_at.getTime()) {
+    return { ok: false, fieldErrors: { starts_at: ["Escolha um horário diferente do atual."] } };
+  }
+  const duration = appointment.ends_at.getTime() - appointment.starts_at.getTime();
+  const durationMinutes = Math.round(duration / MINUTE);
+  if (
+    !(await checkSlot(
+      professional,
+      { duration_minutes: durationMinutes },
+      newStart,
+      appointment.id,
+    ))
+  ) {
+    return { ok: false, message: "Esse horário acabou de ficar indisponível. Escolha outro." };
+  }
+
+  const previousStartsAt = appointment.starts_at.toISOString();
+  try {
+    await db.appointment.update({
+      where: { id: appointment.id },
+      data: {
+        starts_at: newStart,
+        ends_at: new Date(newStart.getTime() + duration),
+        // Sem confirmação automática, o novo horário volta a depender do profissional.
+        ...(professional.auto_confirm ? {} : { status: "pending" as const }),
+        // O lembrete vale para o novo horário.
+        reminder_sent_at: null,
+      },
+    });
+  } catch (error) {
+    if (isPgError(error, PG.EXCLUSION)) {
+      return { ok: false, message: "Esse horário acabou de ser reservado. Escolha outro." };
+    }
+    console.error("[booking] falha ao remarcar", error);
+    return { ok: false, message: "Não foi possível remarcar. Tente novamente." };
+  }
+
+  after(() =>
+    emitBookingEvent({ type: "rescheduled", appointmentId: appointment.id, previousStartsAt }),
+  );
+  revalidatePath("/painel", "layout");
+  redirect(`/${professional.slug}/agendamento/${token}?remarcado=1`);
 }

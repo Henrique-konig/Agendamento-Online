@@ -15,6 +15,8 @@ const kindLabel: Record<string, string> = {
   booking_confirmation: "Confirmação ao cliente",
   booking_new_professional: "Aviso de novo agendamento",
   reminder: "Lembrete",
+  reschedule_client: "Remarcação ao cliente",
+  reschedule_professional: "Aviso de remarcação",
   cancellation_client: "Cancelamento ao cliente",
   cancellation_professional: "Aviso de cancelamento",
   quote_new_professional: "Aviso de orçamento",

@@ -16,6 +16,7 @@ export async function loadSlotOptions(
   professional: Professional,
   service: Service,
   now = new Date(),
+  excludeAppointmentId?: string,
 ): Promise<Omit<SlotOptions, "onlyDate">> {
   // Reservas com Pix vencido liberam o horário antes do cálculo.
   const expired = await expireUnpaid(professional.id);
@@ -35,7 +36,7 @@ export async function loadSlotOptions(
       where: { professional_id: professional.id },
       select: { weekday: true, start_time: true, end_time: true },
     }),
-    collectBusy({ professionalId: professional.id, from, to }),
+    collectBusy({ professionalId: professional.id, from, to, excludeAppointmentId }),
   ]);
   const rules = ruleRows.map((r) => ({
     weekday: r.weekday,
@@ -56,10 +57,25 @@ export async function loadSlotOptions(
   };
 }
 
-export async function getAvailableDays(professional: Professional, service: Service) {
-  return computeAvailableSlots(await loadSlotOptions(professional, service));
+/** `excludeAppointmentId`: ao remarcar, o horário atual do próprio agendamento fica livre. */
+export async function getAvailableDays(
+  professional: Professional,
+  service: Service,
+  excludeAppointmentId?: string,
+) {
+  return computeAvailableSlots(
+    await loadSlotOptions(professional, service, new Date(), excludeAppointmentId),
+  );
 }
 
-export async function checkSlot(professional: Professional, service: Service, start: Date) {
-  return isSlotAvailable(start, await loadSlotOptions(professional, service));
+export async function checkSlot(
+  professional: Professional,
+  service: Service,
+  start: Date,
+  excludeAppointmentId?: string,
+) {
+  return isSlotAvailable(
+    start,
+    await loadSlotOptions(professional, service, new Date(), excludeAppointmentId),
+  );
 }
