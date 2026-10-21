@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { PushToggle } from "@/features/push/push-toggle";
+import { pushConfig } from "@/lib/push/config";
 import { NotificationSettingsForm } from "@/features/notifications/settings-form";
 import { getUser, requireProfessional } from "@/lib/auth";
 import { dateFormatters } from "@/lib/format/date";
@@ -36,6 +38,7 @@ export default async function NotificationsPage() {
     take: 30,
   });
   const f = dateFormatters(professional.timezone);
+  const push = pushConfig();
 
   return (
     <>
@@ -44,6 +47,19 @@ export default async function NotificationsPage() {
         description="Confirmações, avisos e lembretes automáticos para reduzir faltas."
       />
       <div className="space-y-6">
+        <Card>
+          <CardHeader
+            title="Avisos no celular"
+            description="Receba uma notificação na tela do aparelho quando entrar um agendamento, um cancelamento ou um pedido de orçamento."
+          />
+          {push ? (
+            <PushToggle publicKey={push.publicKey} />
+          ) : (
+            <p className="text-sm text-ink-500">
+              Indisponível: o servidor ainda não tem as chaves de avisos (VAPID) configuradas.
+            </p>
+          )}
+        </Card>
         <NotificationSettingsForm
           professional={professional}
           accountEmail={user?.email ?? ""}
