@@ -87,6 +87,31 @@ Mensagens iniciadas pela empresa exigem um **template aprovado**.
 O envio usa um número único da plataforma; cada profissional apenas ativa o
 canal. Custos de conversa da Meta se aplicam.
 
+### Cliente confirma ou cancela pelo próprio WhatsApp (opcional)
+
+O lembrete pode trazer dois botões de resposta rápida: **Confirmo** e **Preciso
+cancelar**. Quem toca em "Confirmo" aparece na agenda do profissional com o selo
+**✓ Cliente confirmou**; "Preciso cancelar" cancela o horário (mesma antecedência
+de 2 horas do link por e-mail) e o profissional recebe o aviso de cancelamento de
+sempre. O cliente recebe uma resposta automática em cada caso.
+
+1. Na Meta, **edite/crie** o template `lembrete_agendamento` com o mesmo corpo e
+   **dois botões "Resposta rápida"**, nesta ordem: `Confirmo` e `Preciso cancelar`.
+   Aguarde a aprovação.
+2. Em **WhatsApp → Configuração → Webhook**, informe a URL
+   `https://SEU-SITE/api/whatsapp/webhook` e um **token de verificação** (texto
+   aleatório de 16+ caracteres, o mesmo de `WHATSAPP_VERIFY_TOKEN`). Assine o
+   campo **messages**.
+3. Em **Configurações do app → Básico**, copie a **Chave secreta do app** para
+   `WHATSAPP_APP_SECRET` (a Meta assina cada evento com ela; eventos sem
+   assinatura válida são recusados).
+4. Na Vercel, defina `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` e, **só depois
+   do template com botões aprovado**, `WHATSAPP_REMINDER_BUTTONS=true`. Faça um
+   **Redeploy**.
+
+Sem `WHATSAPP_REMINDER_BUTTONS=true` o lembrete continua sem botões (enviar
+botões para um template que não os tem faz a Meta recusar a mensagem).
+
 ## Agendador
 
 `vercel.json` agenda `GET /api/cron/lembretes` todos os dias às 21:00 UTC
