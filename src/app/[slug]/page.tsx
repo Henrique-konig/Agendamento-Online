@@ -9,9 +9,11 @@ import {
   Gallery,
   Hero,
   Location,
+  Reviews,
   Section,
   ServiceList,
 } from "@/features/public-page/sections";
+import { getPublicReviews } from "@/features/reviews/queries";
 import { localBusinessJsonLd, pageDescription } from "@/features/public-page/seo";
 import { whatsappLink } from "@/lib/format/contact";
 import { siteUrl } from "@/lib/env";
@@ -56,6 +58,7 @@ export default async function PublicProfilePage(props: PageProps<"/[slug]">) {
   if (!page) notFound();
 
   const { professional: p, services, photos } = page;
+  const reviews = await getPublicReviews(p.id);
   const hasAddress = p.show_address && Boolean(p.address_line || p.city);
   const jsonLd = localBusinessJsonLd(page, siteUrl(`/${p.slug}`));
 
@@ -132,6 +135,12 @@ export default async function PublicProfilePage(props: PageProps<"/[slug]">) {
         {photos.length ? (
           <Section id="fotos" title="Fotos">
             <Gallery photos={photos} />
+          </Section>
+        ) : null}
+
+        {reviews.summary.count ? (
+          <Section id="avaliacoes" title="Avaliações">
+            <Reviews summary={reviews.summary} items={reviews.items} />
           </Section>
         ) : null}
 

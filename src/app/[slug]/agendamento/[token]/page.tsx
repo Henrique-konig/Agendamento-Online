@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { appointmentLocation, appointmentToCalendarEvent } from "@/features/book
 import { canClientCancel, CLIENT_CANCEL_LIMIT_MINUTES } from "@/features/booking/policy";
 import { getAppointmentByToken } from "@/features/booking/queries";
 import { appointmentStatusLabel, appointmentStatusTone } from "@/features/booking/status";
+import { canReview } from "@/features/reviews/policy";
 import { PixPayment } from "@/features/payments/pix-payment";
 import { PublicShell } from "@/features/public-page/public-shell";
 import { googleCalendarLink } from "@/lib/calendar/links";
@@ -14,6 +16,7 @@ import { whatsappLink } from "@/lib/format/contact";
 import { capitalize, dateFormatters } from "@/lib/format/date";
 import { formatBRL } from "@/lib/format/money";
 import { siteUrl } from "@/lib/env";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = { title: "Seu agendamento", robots: { index: false } };
@@ -36,6 +39,13 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
     appointment.payment_amount_cents &&
     appointment.payment_expires_at;
   const cancellable = active && canClientCancel(appointment.starts_at);
+  const reviewable = canReview(appointment);
+  const review = reviewable
+    ? await db.review.findUnique({
+        where: { appointment_id: appointment.id },
+        select: { rating: true },
+      })
+    : null;
 
   return (
     <PublicShell
@@ -90,6 +100,25 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
             {appointment.client ? <Row label="Nome" value={appointment.client.name} /> : null}
           </dl>
         </div>
+
+        {reviewable ? (
+          review ? (
+            <Alert tone="success">Obrigado pela sua avaliação ({review.rating} de 5)!</Alert>
+          ) : (
+            <div className="rounded-2xl bg-white p-6 text-center ring-1 ring-ink-200">
+              <p className="font-display text-lg font-semibold text-ink-900">
+                Como foi o atendimento?
+              </p>
+              <p className="mt-1 text-sm text-ink-500">Leva menos de um minuto.</p>
+              <Link
+                href={`/${professional.slug}/agendamento/${token}/avaliar`}
+                className={cn(buttonClasses("primary"), "mt-4")}
+              >
+                Avaliar atendimento
+              </Link>
+            </div>
+          )
+        ) : null}
 
         {active ? (
           <div className="flex flex-wrap gap-3">

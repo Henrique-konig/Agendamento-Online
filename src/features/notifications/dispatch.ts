@@ -14,6 +14,7 @@ import {
   reminderEmail,
   reminderWhatsAppParams,
   type AppointmentContext,
+  reviewRequestEmail,
 } from "./templates";
 
 type LoadedAppointment = {
@@ -244,6 +245,22 @@ export async function notifyNewQuote(quoteId: string) {
       }),
       replyTo: quote.email ?? undefined,
       idempotencyKey: `quote-${quoteId}`,
+    },
+  );
+}
+
+/** Pede ao cliente que avalie o atendimento (só por e-mail; o link leva à tela de avaliação). */
+export async function sendReviewRequest(appointmentId: string) {
+  const loaded = await loadAppointmentContext(appointmentId);
+  if (!loaded) return;
+  const { ctx, professional } = loaded;
+
+  await email(
+    { professionalId: professional.id, appointmentId, kind: "review_request" },
+    {
+      to: ctx.client.email,
+      ...reviewRequestEmail(ctx),
+      idempotencyKey: `review-request-${appointmentId}`,
     },
   );
 }

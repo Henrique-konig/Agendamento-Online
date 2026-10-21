@@ -66,6 +66,7 @@ const paths: Record<string, ReactNode> = {
   ),
   logout: <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
+  star: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z" />,
 };
 
 export type IconName = keyof typeof paths;
