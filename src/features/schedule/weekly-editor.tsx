@@ -142,7 +142,7 @@ function TimeInput({
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-9 rounded-lg border-0 px-2 text-sm ring-1 ring-ink-200 focus:ring-2 focus:ring-brand-600"
+      className="h-10 min-w-0 flex-1 rounded-lg border-0 px-2 text-sm ring-1 ring-ink-200 focus:ring-2 focus:ring-brand-600 sm:h-9 sm:w-32 sm:flex-none"
     />
   );
 }

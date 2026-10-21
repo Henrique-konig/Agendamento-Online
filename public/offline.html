@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f6a6e" />
+    <title>Sem conexão · Agenda Autônomo</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #f4f7f7;
+        color: #0e1b1e;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        text-align: center;
+      }
+      main {
+        max-width: 360px;
+      }
+      svg {
+        display: block;
+        margin: 0 auto;
+        filter: drop-shadow(0 12px 16px rgb(14 27 30 / 0.2));
+      }
+      h1 {
+        margin: 24px 0 8px;
+        font-size: 22px;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0 0 24px;
+        color: #45585c;
+        line-height: 1.5;
+      }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 24px;
+        background: #0f6a6e;
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg
+        width="72"
+        height="72"
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 512 512"
+      >
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1f8387" />
+            <stop offset="1" stop-color="#0a4144" />
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="116" fill="url(#g)" />
+        <g transform="translate(256 256) scale(1) translate(-256 -256)">
+          <rect
+            x="104"
+            y="100"
+            width="168"
+            height="56"
+            rx="28"
+            fill="#ffffff"
+            fill-opacity="0.38"
+          />
+          <rect x="104" y="196" width="304" height="216" rx="60" fill="#f6b93b" />
+          <path
+            d="M190 306 l46 46 l90 -92"
+            fill="none"
+            stroke="#0a4144"
+            stroke-width="34"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </g>
+      </svg>
+      <h1>Você está sem conexão</h1>
+      <p>
+        Assim que a internet voltar, sua agenda aparece de novo. Nada do que já foi salvo se perdeu.
+      </p>
+      <button type="button" onclick="location.reload()">Tentar de novo</button>
+    </main>
+  </body>
+</html>
