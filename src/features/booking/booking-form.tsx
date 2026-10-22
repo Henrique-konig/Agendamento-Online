@@ -79,7 +79,7 @@ export function BookingForm({ slug, serviceId, timeZone, days, prepayment }: Pro
               >
                 <span className="text-xs capitalize">{f.weekdayShort(anchor)}</span>
                 <span className="text-lg font-semibold">{day.date.slice(8)}</span>
-                <span className="text-[10px] opacity-75">{f.short(anchor).slice(3)}</span>
+                <span className="text-[10px] opacity-90">{f.short(anchor).slice(3)}</span>
               </button>
             );
           })}
@@ -113,7 +113,7 @@ export function BookingForm({ slug, serviceId, timeZone, days, prepayment }: Pro
         </fieldset>
       ) : null}
 
-      <fieldset className={cn("min-w-0 space-y-5", !slot && "pointer-events-none opacity-50")}>
+      <fieldset disabled={!slot} className={cn("min-w-0 space-y-5", !slot && "opacity-50")}>
         <legend className="mb-3 text-sm font-semibold text-ink-900">3. Seus dados</legend>
         <Field label="Nome" name="name" errors={e.name}>
           <Input id="name" name="name" autoComplete="name" required />
