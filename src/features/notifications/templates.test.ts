@@ -5,6 +5,7 @@ import {
   professionalNewBookingEmail,
   reminderEmail,
   reminderWhatsAppParams,
+  rescheduleEmail,
   type AppointmentContext,
 } from "./templates";
 
@@ -71,5 +72,25 @@ describe("templates de e-mail", () => {
       "Terça-feira, 3 de novembro, 09:00",
       ctx.manageUrl,
     ]);
+  });
+});
+
+describe("e-mail de remarcação", () => {
+  const before = "2026-11-02T12:00:00Z";
+
+  it("cliente vê o horário antigo e o novo, no fuso do profissional", () => {
+    const email = rescheduleEmail(ctx, "client", before);
+    expect(email.subject).toBe("Horário alterado — Barbearia do Zé");
+    expect(email.text).toContain("mudou de 02/11 às 09:00 para 03/11 às 09:00");
+    expect(email.text).toContain(ctx.manageUrl);
+  });
+
+  it("profissional é avisado e, sem confirmação automática, pedido para confirmar", () => {
+    const auto = rescheduleEmail(ctx, "professional", before);
+    expect(auto.subject).toContain("Remarcado: Maria Souza");
+    expect(auto.text).toContain("horário antigo está livre");
+
+    const manual = rescheduleEmail({ ...ctx, status: "pending" }, "professional", before);
+    expect(manual.text).toContain("Confirme o novo horário no painel");
   });
 });

@@ -3,6 +3,8 @@ import { siteUrl } from "@/lib/env";
 import { sendEmail, type EmailMessage } from "@/lib/notifications/email";
 import type { DeliveryResult } from "@/lib/notifications/types";
 import { isWhatsAppConfigured, sendWhatsAppTemplate } from "@/lib/notifications/whatsapp";
+import { reminderButtonsEnabled } from "@/lib/notifications/whatsapp-config";
+import { buttonPayload } from "@/lib/notifications/whatsapp-webhook";
 import { integrationsEnv } from "@/lib/env";
 import { db } from "@/lib/db";
 import type { NotificationChannel, Professional } from "@/types/models";
@@ -13,7 +15,9 @@ import {
   professionalNewBookingEmail,
   reminderEmail,
   reminderWhatsAppParams,
+  rescheduleEmail,
   type AppointmentContext,
+  reviewRequestEmail,
 } from "./templates";
 
 type LoadedAppointment = {
@@ -194,6 +198,36 @@ export async function notifyBookingCancelled(appointmentId: string) {
   }
 }
 
+/** O cliente remarcou: avisa o cliente (confirmação) e o profissional. */
+export async function notifyBookingRescheduled(appointmentId: string, previousStartsAt: string) {
+  const loaded = await loadAppointmentContext(appointmentId);
+  if (!loaded) return;
+  const { ctx, professional } = loaded;
+  const meta = { professionalId: professional.id, appointmentId };
+  // A chave inclui o novo horário: cada remarcação é um envio distinto.
+  const key = `${appointmentId}-${new Date(ctx.startsAt).getTime()}`;
+
+  await email(
+    { ...meta, kind: "reschedule_client" },
+    {
+      to: ctx.client.email,
+      ...rescheduleEmail(ctx, "client", previousStartsAt),
+      idempotencyKey: `reschedule-client-${key}`,
+    },
+  );
+  if (professional.notify_new_booking) {
+    await email(
+      { ...meta, kind: "reschedule_professional" },
+      {
+        to: loaded.professionalEmail,
+        ...rescheduleEmail(ctx, "professional", previousStartsAt),
+        replyTo: ctx.client.email ?? undefined,
+        idempotencyKey: `reschedule-pro-${key}`,
+      },
+    );
+  }
+}
+
 /** Envia o lembrete do dia anterior pelos canais habilitados. */
 export async function sendReminder(appointmentId: string) {
   const loaded = await loadAppointmentContext(appointmentId);
@@ -210,11 +244,23 @@ export async function sendReminder(appointmentId: string) {
   }
 
   if (professional.reminder_whatsapp) {
+    // Botões "Confirmo" / "Preciso cancelar": o token secreto do agendamento vai no payload.
+    const token = reminderButtonsEnabled()
+      ? (
+          await db.appointment.findUnique({
+            where: { id: appointmentId },
+            select: { cancel_token: true },
+          })
+        )?.cancel_token
+      : undefined;
     const result: DeliveryResult = isWhatsAppConfigured()
       ? await sendWhatsAppTemplate({
           to: ctx.client.phone,
           template: integrationsEnv().WHATSAPP_REMINDER_TEMPLATE,
           bodyParams: reminderWhatsAppParams(ctx),
+          buttonPayloads: token
+            ? [buttonPayload("confirm", token), buttonPayload("cancel", token)]
+            : undefined,
         })
       : { status: "skipped", reason: "WhatsApp não configurado" };
     await log({ ...meta, channel: "whatsapp", recipient: ctx.client.phone, result });
@@ -244,6 +290,22 @@ export async function notifyNewQuote(quoteId: string) {
       }),
       replyTo: quote.email ?? undefined,
       idempotencyKey: `quote-${quoteId}`,
+    },
+  );
+}
+
+/** Pede ao cliente que avalie o atendimento (só por e-mail; o link leva à tela de avaliação). */
+export async function sendReviewRequest(appointmentId: string) {
+  const loaded = await loadAppointmentContext(appointmentId);
+  if (!loaded) return;
+  const { ctx, professional } = loaded;
+
+  await email(
+    { professionalId: professional.id, appointmentId, kind: "review_request" },
+    {
+      to: ctx.client.email,
+      ...reviewRequestEmail(ctx),
+      idempotencyKey: `review-request-${appointmentId}`,
     },
   );
 }

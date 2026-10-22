@@ -13,6 +13,7 @@ const schema = z.object({
   notify_new_booking: checkbox,
   reminder_email: checkbox,
   reminder_whatsapp: checkbox,
+  ask_reviews: checkbox,
 });
 
 export async function saveNotificationSettings(

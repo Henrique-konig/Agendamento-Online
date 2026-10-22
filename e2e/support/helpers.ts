@@ -110,3 +110,19 @@ export async function signIn(page: Page, email: string, password = PASSWORD) {
   await page.fill("#password", password);
   await page.click("button[type=submit]");
 }
+
+/**
+ * Espera as animações de entrada acabarem: o axe mede o contraste com a opacidade do momento.
+ * Animações infinitas (ex.: o ponto pulsante da página inicial) são ignoradas, senão nunca terminam.
+ */
+export async function settle(page: Page) {
+  await page.waitForLoadState("networkidle");
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => null)),
+    ),
+  );
+}

@@ -1,8 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { createProfessional } from "./support/helpers";
+import { createProfessional, settle } from "./support/helpers";
 
 async function audit(page: Page, label: string) {
+  await settle(page);
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();

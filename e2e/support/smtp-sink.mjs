@@ -5,21 +5,28 @@ import net from "node:net";
 
 const mails = [];
 
+/** Quoted-printable (RFC 2045) -> texto UTF-8, juntando os bytes antes de decodificar. */
+function qpToUtf8(text) {
+  const bytes = [];
+  const clean = text.replace(/=\r?\n/g, "");
+  for (let i = 0; i < clean.length; i++) {
+    if (clean[i] === "=" && /^[0-9A-F]{2}$/i.test(clean.slice(i + 1, i + 3))) {
+      bytes.push(parseInt(clean.slice(i + 1, i + 3), 16));
+      i += 2;
+    } else {
+      bytes.push(...Buffer.from(clean[i], "utf8"));
+    }
+  }
+  return Buffer.from(bytes).toString("utf8");
+}
+
 function decodeHeader(value) {
-  // Assunto vem em "=?UTF-8?B?...?=" quando tem acentos.
+  // Assunto com acentos vem em "=?UTF-8?B?...?=" (base64) ou "=?UTF-8?Q?...?=" (quoted-printable).
   return value.replace(/=\?UTF-8\?([BQ])\?([^?]*)\?=/gi, (_, enc, text) =>
     enc.toUpperCase() === "B"
       ? Buffer.from(text, "base64").toString("utf8")
-      : text
-          .replace(/_/g, " ")
-          .replace(/=([0-9A-F]{2})/gi, (_m, h) => String.fromCharCode(parseInt(h, 16))),
+      : qpToUtf8(text.replace(/_/g, " ")),
   );
-}
-
-function decodeQuotedPrintable(text) {
-  return text
-    .replace(/=\r?\n/g, "")
-    .replace(/=([0-9A-F]{2})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
 }
 
 function parse(raw, envelope) {
@@ -32,7 +39,7 @@ function parse(raw, envelope) {
       ),
     ).trim();
   const body = rest.join("\n\n");
-  const text = /quoted-printable/i.test(raw) ? decodeQuotedPrintable(body) : body;
+  const text = /quoted-printable/i.test(raw) ? qpToUtf8(body) : body;
   return { to: envelope.to, from: envelope.from, subject: header("subject"), body: text };
 }
 

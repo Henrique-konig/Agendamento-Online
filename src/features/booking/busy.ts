@@ -4,7 +4,13 @@ import type { Interval } from "@/lib/scheduling/slots";
 import { googleBusySource } from "@/features/google/busy-source";
 import { ACTIVE_STATUSES } from "./policy";
 
-export type BusyRange = { professionalId: string; from: Date; to: Date };
+export type BusyRange = {
+  professionalId: string;
+  from: Date;
+  to: Date;
+  /** Agendamento ignorado no cálculo (ao remarcar, o próprio horário não conta como ocupado). */
+  excludeAppointmentId?: string;
+};
 
 /**
  * Fonte de horários ocupados. Novas integrações (ex.: Google Agenda) entram
@@ -12,10 +18,16 @@ export type BusyRange = { professionalId: string; from: Date; to: Date };
  */
 export type BusySource = (range: BusyRange) => Promise<Interval[]>;
 
-export const appointmentsSource: BusySource = async ({ professionalId, from, to }) => {
+export const appointmentsSource: BusySource = async ({
+  professionalId,
+  from,
+  to,
+  excludeAppointmentId,
+}) => {
   const rows = await db.appointment.findMany({
     where: {
       professional_id: professionalId,
+      ...(excludeAppointmentId ? { id: { not: excludeAppointmentId } } : {}),
       status: { in: [...ACTIVE_STATUSES] },
       starts_at: { lt: to },
       ends_at: { gt: from },

@@ -19,6 +19,7 @@ export const painelNav: NavGroup[] = [
       { href: "/painel/servicos", label: "Serviços", icon: "tag" },
       { href: "/painel/perfil", label: "Perfil", icon: "user" },
       { href: "/painel/fotos", label: "Fotos", icon: "image" },
+      { href: "/painel/avaliacoes", label: "Avaliações", icon: "star" },
     ],
   },
   {
@@ -26,6 +27,7 @@ export const painelNav: NavGroup[] = [
     items: [
       { href: "/painel/horarios", label: "Horários", icon: "clock" },
       { href: "/painel/bloqueios", label: "Bloqueios", icon: "block" },
+      { href: "/painel/relatorios", label: "Relatórios", icon: "chart" },
     ],
   },
   {
