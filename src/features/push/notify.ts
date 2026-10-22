@@ -1,9 +1,18 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { sendPushToProfessional } from "@/lib/push/send";
-import { cancellationPush, newBookingPush, paymentPush, quotePush } from "./payloads";
+import {
+  cancellationPush,
+  newBookingPush,
+  paymentPush,
+  quotePush,
+  reschedulePush,
+} from "./payloads";
 
-type BookingPushEvent = { type: "created" | "cancelled" | "paid"; appointmentId: string };
+type BookingPushEvent = {
+  type: "created" | "cancelled" | "paid" | "rescheduled";
+  appointmentId: string;
+};
 
 /** Avisa o profissional, nos aparelhos que ativaram o push, sobre mudanças em agendamentos. */
 export async function pushBookingEvent(event: BookingPushEvent) {
@@ -29,7 +38,9 @@ export async function pushBookingEvent(event: BookingPushEvent) {
       ? newBookingPush(info, appointment.status === "pending")
       : event.type === "paid"
         ? paymentPush(info)
-        : cancellationPush(info);
+        : event.type === "rescheduled"
+          ? reschedulePush(info)
+          : cancellationPush(info);
   await sendPushToProfessional(appointment.professional_id, payload);
 }
 

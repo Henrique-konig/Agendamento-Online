@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { cancellationPush, newBookingPush, paymentPush, quotePush } from "./payloads";
+import {
+  cancellationPush,
+  newBookingPush,
+  paymentPush,
+  quotePush,
+  reschedulePush,
+} from "./payloads";
 
 const info = {
   clientName: "Maria Souza",
@@ -24,6 +30,13 @@ describe("textos das notificações push", () => {
   it("cancelamento e pagamento", () => {
     expect(cancellationPush(info).title).toBe("Agendamento cancelado");
     expect(paymentPush(info).title).toBe("Pix recebido");
+  });
+
+  it("remarcação mostra o novo horário no fuso do profissional", () => {
+    const p = reschedulePush(info);
+    expect(p.title).toBe("Cliente remarcou");
+    expect(p.body).toBe("Maria Souza agora 03/11 às 09:00");
+    expect(p.url).toBe("/painel/agenda");
   });
 
   it("orçamento abre a lista de orçamentos", () => {

@@ -2,6 +2,9 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { formatPhoneBR, whatsappLink } from "@/lib/format/contact";
 import { formatDuration, formatServicePrice } from "@/lib/format/money";
+import type { PublicReview } from "@/features/reviews/queries";
+import { Stars } from "@/features/reviews/stars";
+import type { RatingSummary } from "@/features/reviews/summary";
 import type { PublicPage } from "./queries";
 import { fullAddress } from "./seo";
 
@@ -202,5 +205,42 @@ export function Contact({ professional: p }: { professional: Professional }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+export function Reviews({ summary, items }: { summary: RatingSummary; items: PublicReview[] }) {
+  const formatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
+  return (
+    <div>
+      <div className="mb-5 flex items-center gap-3">
+        <span className="font-display text-4xl font-semibold text-ink-900 tabular-nums">
+          {summary.average?.toLocaleString("pt-BR", { minimumFractionDigits: 1 })}
+        </span>
+        <div>
+          <Stars rating={summary.average ?? 0} className="text-xl" />
+          <p className="text-sm text-ink-500">
+            {summary.count} {summary.count === 1 ? "avaliação" : "avaliações"}
+          </p>
+        </div>
+      </div>
+      {items.length ? (
+        <ul className="space-y-3">
+          {items.map((review) => (
+            <li key={review.id} className="rounded-xl bg-white p-4 ring-1 ring-ink-200">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium text-ink-900">{review.name}</span>
+                <Stars rating={review.rating} />
+              </div>
+              <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-ink-700">
+                {review.comment}
+              </p>
+              <p className="mt-2 text-xs text-ink-400 first-letter:uppercase">
+                {formatter.format(review.date)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { emitBookingEvent } from "@/features/booking/notify";
 import { runReminders } from "@/features/notifications/reminders";
 import { expireUnpaid } from "@/features/payments/expire";
+import { runReviewRequests } from "@/features/reviews/requests";
 import { integrationsEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,12 @@ export async function GET(request: NextRequest) {
     );
 
     const result = await runReminders();
-    return NextResponse.json({ ...result, expiredPayments: expired.length });
+    // Um pedido de avaliação que falha não pode esconder o resultado dos lembretes.
+    const reviews = await runReviewRequests().catch((error) => {
+      console.error("[cron] falha nos pedidos de avaliação", error);
+      return { checked: 0, sent: 0, failed: -1 };
+    });
+    return NextResponse.json({ ...result, expiredPayments: expired.length, reviews });
   } catch (error) {
     // Só chega aqui quem enviou o segredo, então o motivo pode ir na resposta.
     console.error("[cron] falha ao executar lembretes", error);

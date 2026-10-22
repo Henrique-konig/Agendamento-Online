@@ -67,6 +67,13 @@ export function NotificationSettingsForm({
             }
             disabled={!whatsappConfigured}
           />
+          <Toggle
+            name="ask_reviews"
+            defaultChecked={p.ask_reviews}
+            title="Pedir avaliação ao cliente depois do atendimento"
+            description="Um e-mail no dia seguinte, quando o cliente informou o e-mail ao agendar."
+            disabled={!emailConfigured}
+          />
         </div>
         <div className="mt-6 flex justify-end">
           <SubmitButton>Salvar</SubmitButton>
