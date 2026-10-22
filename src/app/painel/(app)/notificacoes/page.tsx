@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { Alert } from "@/components/ui/alert";
 import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { NotificationSettingsForm } from "@/features/notifications/settings-form";
 import { getUser, requireProfessional } from "@/lib/auth";
+import { envProblems } from "@/lib/env";
 import { dateFormatters } from "@/lib/format/date";
 import { isEmailConfigured } from "@/lib/notifications/email";
 import { isWhatsAppConfigured } from "@/lib/notifications/whatsapp";
@@ -36,6 +38,7 @@ export default async function NotificationsPage() {
     take: 30,
   });
   const f = dateFormatters(professional.timezone);
+  const problems = envProblems();
 
   return (
     <>
@@ -44,6 +47,13 @@ export default async function NotificationsPage() {
         description="Confirmações, avisos e lembretes automáticos para reduzir faltas."
       />
       <div className="space-y-6">
+        {problems.length ? (
+          <Alert tone="error">
+            Há configurações do servidor com valor inválido e por isso foram ignoradas:{" "}
+            <strong>{problems.map((p) => p.name).join(", ")}</strong>. Corrija em Vercel → Settings
+            → Environment Variables e faça um novo deploy.
+          </Alert>
+        ) : null}
         <NotificationSettingsForm
           professional={professional}
           accountEmail={user?.email ?? ""}
@@ -78,6 +88,9 @@ export default async function NotificationsPage() {
                       {f.short(entry.created_at)} {f.time(entry.created_at)}
                     </span>
                   </span>
+                  {entry.status === "failed" && entry.error ? (
+                    <p className="w-full text-xs text-red-600">Motivo: {entry.error}</p>
+                  ) : null}
                 </li>
               ))}
             </ul>

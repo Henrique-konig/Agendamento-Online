@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireProfessional } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
@@ -9,6 +10,7 @@ import { db } from "@/lib/db";
 import { cn } from "@/lib/utils/cn";
 import { AppointmentList } from "@/features/appointments/appointment-list";
 import { listAppointments } from "@/features/appointments/queries";
+import { recentNotificationFailures } from "@/features/notifications/health";
 import { addDays, instantToLocalDate, zonedToInstant } from "@/lib/scheduling/time";
 
 export const metadata: Metadata = { title: "Painel" };
@@ -20,23 +22,25 @@ export default async function PainelHomePage() {
   const tz = professional.timezone;
   const today = instantToLocalDate(new Date(), tz);
 
-  const [serviceCount, photoCount, todayAppointments, newQuotes, pendingCount] = await Promise.all([
-    db.service.count({ where: { professional_id: professional.id } }),
-    db.photo.count({ where: { professional_id: professional.id } }),
-    listAppointments(
-      professional.id,
-      zonedToInstant(today, 0, tz),
-      zonedToInstant(addDays(today, 1), 0, tz),
-    ),
-    db.quoteRequest.count({ where: { professional_id: professional.id, status: "new" } }),
-    db.appointment.count({
-      where: {
-        professional_id: professional.id,
-        status: "pending",
-        starts_at: { gte: new Date() },
-      },
-    }),
-  ]);
+  const [serviceCount, photoCount, todayAppointments, newQuotes, pendingCount, failures] =
+    await Promise.all([
+      db.service.count({ where: { professional_id: professional.id } }),
+      db.photo.count({ where: { professional_id: professional.id } }),
+      listAppointments(
+        professional.id,
+        zonedToInstant(today, 0, tz),
+        zonedToInstant(addDays(today, 1), 0, tz),
+      ),
+      db.quoteRequest.count({ where: { professional_id: professional.id, status: "new" } }),
+      db.appointment.count({
+        where: {
+          professional_id: professional.id,
+          status: "pending",
+          starts_at: { gte: new Date() },
+        },
+      }),
+      recentNotificationFailures(professional.id),
+    ]);
 
   const activeToday = todayAppointments.filter(
     (a) => a.status === "pending" || a.status === "confirmed",
@@ -76,6 +80,17 @@ export default async function PainelHomePage() {
         }
       />
       <div className="space-y-6">
+        {failures.count ? (
+          <Alert tone="warning">
+            {failures.count === 1
+              ? "1 aviso ao cliente não foi enviado"
+              : `${failures.count} avisos aos clientes não foram enviados`}{" "}
+            nos últimos dias.{" "}
+            <Link href="/painel/notificacoes" className="font-medium underline">
+              Ver o que aconteceu
+            </Link>
+          </Alert>
+        ) : null}
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           {stats.map((stat, i) => (
             <div
