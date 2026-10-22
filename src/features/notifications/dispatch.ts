@@ -3,6 +3,8 @@ import { siteUrl } from "@/lib/env";
 import { sendEmail, type EmailMessage } from "@/lib/notifications/email";
 import type { DeliveryResult } from "@/lib/notifications/types";
 import { isWhatsAppConfigured, sendWhatsAppTemplate } from "@/lib/notifications/whatsapp";
+import { reminderButtonsEnabled } from "@/lib/notifications/whatsapp-config";
+import { buttonPayload } from "@/lib/notifications/whatsapp-webhook";
 import { integrationsEnv } from "@/lib/env";
 import { db } from "@/lib/db";
 import type { NotificationChannel, Professional } from "@/types/models";
@@ -241,11 +243,23 @@ export async function sendReminder(appointmentId: string) {
   }
 
   if (professional.reminder_whatsapp) {
+    // Botões "Confirmo" / "Preciso cancelar": o token secreto do agendamento vai no payload.
+    const token = reminderButtonsEnabled()
+      ? (
+          await db.appointment.findUnique({
+            where: { id: appointmentId },
+            select: { cancel_token: true },
+          })
+        )?.cancel_token
+      : undefined;
     const result: DeliveryResult = isWhatsAppConfigured()
       ? await sendWhatsAppTemplate({
           to: ctx.client.phone,
           template: integrationsEnv().WHATSAPP_REMINDER_TEMPLATE,
           bodyParams: reminderWhatsAppParams(ctx),
+          buttonPayloads: token
+            ? [buttonPayload("confirm", token), buttonPayload("cancel", token)]
+            : undefined,
         })
       : { status: "skipped", reason: "WhatsApp não configurado" };
     await log({ ...meta, channel: "whatsapp", recipient: ctx.client.phone, result });

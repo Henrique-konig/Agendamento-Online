@@ -1,8 +1,7 @@
 import "server-only";
 import { integrationsEnv } from "@/lib/env";
 import type { DeliveryResult } from "./types";
-
-const GRAPH_URL = "https://graph.facebook.com/v21.0";
+import { graphBaseUrl } from "./whatsapp-config";
 
 export function isWhatsAppConfigured() {
   const env = integrationsEnv();
@@ -18,6 +17,8 @@ export async function sendWhatsAppTemplate(input: {
   to: string;
   template: string;
   bodyParams: string[];
+  /** Payloads dos botões de resposta rápida do template (na ordem em que foram criados na Meta). */
+  buttonPayloads?: string[];
 }): Promise<DeliveryResult> {
   const env = integrationsEnv();
   if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
@@ -25,7 +26,7 @@ export async function sendWhatsAppTemplate(input: {
   }
 
   try {
-    const response = await fetch(`${GRAPH_URL}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+    const response = await fetch(`${graphBaseUrl()}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${env.WHATSAPP_TOKEN}`,
@@ -43,12 +44,58 @@ export async function sendWhatsAppTemplate(input: {
               type: "body",
               parameters: input.bodyParams.map((text) => ({ type: "text", text })),
             },
+            ...(input.buttonPayloads ?? []).map((payload, index) => ({
+              type: "button",
+              sub_type: "quick_reply",
+              index: String(index),
+              parameters: [{ type: "payload", payload }],
+            })),
           ],
         },
       }),
       signal: AbortSignal.timeout(10_000),
     });
 
+    const body = (await response.json().catch(() => ({}))) as {
+      messages?: Array<{ id: string }>;
+      error?: { message?: string };
+    };
+    if (!response.ok) {
+      return { status: "failed", error: body.error?.message ?? `HTTP ${response.status}` };
+    }
+    return { status: "sent", providerId: body.messages?.[0]?.id };
+  } catch (e) {
+    return { status: "failed", error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * Mensagem de texto livre. A Meta só aceita dentro de 24 h depois de o cliente escrever,
+ * o que vale para a resposta a um botão (ele acabou de interagir).
+ */
+export async function sendWhatsAppText(input: {
+  to: string;
+  body: string;
+}): Promise<DeliveryResult> {
+  const env = integrationsEnv();
+  if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
+    return { status: "skipped", reason: "WhatsApp não configurado" };
+  }
+  try {
+    const response = await fetch(`${graphBaseUrl()}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.WHATSAPP_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: input.to,
+        type: "text",
+        text: { body: input.body, preview_url: false },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
     const body = (await response.json().catch(() => ({}))) as {
       messages?: Array<{ id: string }>;
       error?: { message?: string };

@@ -10,6 +10,7 @@ export function listAppointments(professionalId: string, from: Date, to: Date) {
       starts_at: true,
       ends_at: true,
       status: true,
+      client_confirmed_at: true,
       service_name: true,
       price_cents: true,
       notes: true,

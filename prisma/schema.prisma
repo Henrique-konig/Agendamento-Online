@@ -264,6 +264,7 @@ model Appointment {
   cancel_token         String            @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cancelled_at         DateTime?         @db.Timestamptz(6)
   reminder_sent_at     DateTime?         @db.Timestamptz(6)
+  client_confirmed_at  DateTime?         @db.Timestamptz(6)
   google_event_id      String?
   payment_status       PaymentStatus     @default(not_required)
   payment_amount_cents Int?
