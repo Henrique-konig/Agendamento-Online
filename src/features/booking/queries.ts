@@ -9,6 +9,7 @@ export async function getAppointmentByToken(token: string) {
     where: { cancel_token: token },
     select: {
       id: true,
+      professional_id: true,
       starts_at: true,
       ends_at: true,
       status: true,
@@ -24,6 +25,7 @@ export async function getAppointmentByToken(token: string) {
       professional: {
         select: {
           slug: true,
+          booking_enabled: true,
           display_name: true,
           profession: true,
           avatar_url: true,
