@@ -26,6 +26,7 @@ export const painelNav: NavGroup[] = [
     items: [
       { href: "/painel/horarios", label: "Horários", icon: "clock" },
       { href: "/painel/bloqueios", label: "Bloqueios", icon: "block" },
+      { href: "/painel/relatorios", label: "Relatórios", icon: "chart" },
     ],
   },
   {

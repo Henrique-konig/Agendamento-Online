@@ -64,6 +64,7 @@ const paths: Record<string, ReactNode> = {
       <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2" />
     </>
   ),
+  chart: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   logout: <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
 };
