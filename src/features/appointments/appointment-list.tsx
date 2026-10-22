@@ -61,6 +61,11 @@ export function AppointmentList({ appointments, timeZone, now = new Date() }: Pr
                 >
                   {appointmentStatusLabel[a.status]}
                 </span>
+                {active && !past && a.client_confirmed_at ? (
+                  <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-800 ring-1 ring-brand-200">
+                    ✓ Cliente confirmou
+                  </span>
+                ) : null}
                 {a.payment_status === "pending" || a.payment_status === "paid" ? (
                   <span
                     className={cn(

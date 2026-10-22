@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils/cn";
 export const metadata: Metadata = { title: "Seu agendamento", robots: { index: false } };
 
 export default async function AppointmentPage(props: PageProps<"/[slug]/agendamento/[token]">) {
-  const { slug, token } = await props.params;
+  const [{ slug, token }, searchParams] = await Promise.all([props.params, props.searchParams]);
   const appointment = await getAppointmentByToken(token);
   const professional = appointment?.professional;
   if (!appointment || !professional || professional.slug !== slug.toLowerCase()) notFound();
@@ -46,15 +46,25 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
         select: { rating: true },
       })
     : null;
+  const reschedulable = cancellable && professional.booking_enabled && !awaitingPix;
 
   return (
     <PublicShell
       professional={professional}
       title={
-        awaitingPix ? "Finalize com o Pix" : active ? "Agendamento recebido!" : "Seu agendamento"
+        awaitingPix
+          ? "Finalize com o Pix"
+          : active
+            ? searchParams.remarcado === "1"
+              ? "Horário alterado!"
+              : "Agendamento recebido!"
+            : "Seu agendamento"
       }
     >
       <div className="space-y-6">
+        {searchParams.remarcado === "1" ? (
+          <Alert tone="success">Enviamos a confirmação do novo horário por e-mail.</Alert>
+        ) : null}
         {awaitingPix ? (
           <PixPayment
             copyPaste={appointment.pix_copy_paste!}
@@ -147,20 +157,30 @@ export default async function AppointmentPage(props: PageProps<"/[slug]/agendame
         ) : null}
 
         <p className="text-xs text-ink-500">
-          Guarde este link para consultar ou cancelar seu agendamento.
+          Guarde este link para consultar, remarcar ou cancelar seu agendamento.
         </p>
 
         {cancellable ? (
-          <form action={cancelBookingByToken} className="border-t border-ink-200 pt-6">
-            <input type="hidden" name="token" value={token} />
-            <Button type="submit" variant="ghost" className="text-red-600">
-              Cancelar agendamento
-            </Button>
-          </form>
+          <div className="flex flex-wrap items-center gap-3 border-t border-ink-200 pt-6">
+            {reschedulable ? (
+              <Link
+                href={`/${professional.slug}/agendamento/${token}/remarcar`}
+                className={buttonClasses("secondary")}
+              >
+                Remarcar horário
+              </Link>
+            ) : null}
+            <form action={cancelBookingByToken}>
+              <input type="hidden" name="token" value={token} />
+              <Button type="submit" variant="ghost" className="text-red-600">
+                Cancelar agendamento
+              </Button>
+            </form>
+          </div>
         ) : active ? (
           <p className="border-t border-ink-200 pt-6 text-sm text-ink-500">
-            Cancelamentos online são aceitos até {CLIENT_CANCEL_LIMIT_MINUTES / 60} horas antes.
-            Fale direto com o profissional.
+            Remarcações e cancelamentos online são aceitos até {CLIENT_CANCEL_LIMIT_MINUTES / 60}{" "}
+            horas antes. Fale direto com o profissional.
           </p>
         ) : null}
       </div>

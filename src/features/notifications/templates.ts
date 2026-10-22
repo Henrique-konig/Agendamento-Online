@@ -204,6 +204,45 @@ export function cancellationEmail(
       };
 }
 
+export function rescheduleEmail(
+  ctx: AppointmentContext,
+  audience: "client" | "professional",
+  previousStartsAt: string,
+): RenderedEmail {
+  const f = dateFormatters(ctx.professional.timezone);
+  const before = `${f.short(previousStartsAt)} às ${f.time(previousStartsAt)}`;
+  const after = `${f.short(ctx.startsAt)} às ${f.time(ctx.startsAt)}`;
+  const pending = ctx.status === "pending";
+  return audience === "client"
+    ? {
+        subject: `Horário alterado — ${ctx.professional.displayName}`,
+        ...layout({
+          heading: "Seu horário foi alterado",
+          intro: pending
+            ? `Olá, ${ctx.client.name}! Seu agendamento mudou de ${before} para ${after}. ${ctx.professional.displayName} vai confirmar o novo horário.`
+            : `Olá, ${ctx.client.name}! Seu agendamento mudou de ${before} para ${after}.`,
+          details: appointmentDetails(ctx),
+          cta: { label: "Ver ou cancelar agendamento", url: ctx.manageUrl },
+          footer: FOOTER,
+        }),
+      }
+    : {
+        subject: `Remarcado: ${ctx.client.name} — agora ${after}`,
+        ...layout({
+          heading: "Cliente remarcou",
+          intro: pending
+            ? `${ctx.client.name} trocou ${before} por ${after}. Confirme o novo horário no painel.`
+            : `${ctx.client.name} trocou ${before} por ${after}. O horário antigo está livre.`,
+          details: appointmentDetails(ctx, [
+            ["Cliente", ctx.client.name],
+            ["WhatsApp", formatPhoneBR(ctx.client.phone)],
+          ]),
+          cta: { label: "Abrir agenda", url: ctx.painelUrl },
+          footer: FOOTER,
+        }),
+      };
+}
+
 export function newQuoteEmail(input: {
   name: string;
   phone: string;
