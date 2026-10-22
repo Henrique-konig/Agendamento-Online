@@ -27,6 +27,18 @@ próxima (ex.: São Paulo), copie as duas strings de **Connect** e crie na Verce
 
 Integrações opcionais (Resend, Google, Pix) estão no `.env.example`.
 
+### Avisos no celular (push)
+
+Para o profissional receber notificações de novos agendamentos no aparelho:
+
+1. Gere as chaves: `npx web-push generate-vapid-keys`.
+2. Na Vercel, crie `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (sensível) e
+   `VAPID_SUBJECT` (`mailto:seu@email.com`) e faça um novo deploy.
+3. No painel, em **Notificações → Avisos no celular**, toque em **Ativar avisos
+   neste aparelho**. No iPhone o app precisa estar instalado na tela inicial.
+
+Sem as três variáveis o cartão aparece como indisponível e nada mais muda.
+
 ## 4. Deploy
 
 O script `vercel-build` (`scripts/vercel-build.mjs`) roda `prisma migrate deploy`

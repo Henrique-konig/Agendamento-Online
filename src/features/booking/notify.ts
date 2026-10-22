@@ -1,5 +1,6 @@
 import "server-only";
 import { pushAppointmentToGoogle, removeAppointmentFromGoogle } from "@/features/google/sync";
+import { pushBookingEvent } from "@/features/push/notify";
 import {
   notifyBookingCancelled,
   notifyBookingCreated,
@@ -43,6 +44,7 @@ const listeners: Listener[] = [
       await pushAppointmentToGoogle(event.appointmentId);
     }
   },
+  (event) => pushBookingEvent(event),
 ];
 
 export async function emitBookingEvent(event: BookingEvent) {

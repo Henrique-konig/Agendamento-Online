@@ -162,6 +162,7 @@ model Professional {
   appointments       Appointment[]
   quote_requests     QuoteRequest[]
   notification_log   NotificationLog[]
+  push_subscriptions PushSubscription[]
   reviews            Review[]
   google_connection  GoogleConnection?
   pix_settings       PixSettings?
@@ -336,6 +337,22 @@ model NotificationLog {
 
   @@index([professional_id, created_at(sort: Desc)])
   @@map("notification_log")
+}
+
+/// Aparelhos do profissional que recebem avisos por push (Web Push / VAPID).
+model PushSubscription {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id String   @db.Uuid
+  endpoint        String   @unique
+  p256dh          String
+  auth            String
+  user_agent      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  professional Professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+
+  @@index([professional_id])
+  @@map("push_subscriptions")
 }
 
 /// Avaliação do cliente após o atendimento (uma por agendamento; o profissional pode ocultar).

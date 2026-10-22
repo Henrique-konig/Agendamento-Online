@@ -32,3 +32,39 @@ self.addEventListener("fetch", (event) => {
     ),
   );
 });
+
+// Avisos push do painel (novos agendamentos, cancelamentos, orçamentos).
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Agenda Autônomo", {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: data.tag,
+      data: { url: data.url || "/painel" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  // Só abre caminhos do próprio site, nunca uma URL vinda do payload.
+  const path = String((event.notification.data && event.notification.data.url) || "/painel");
+  const target = new URL(path.startsWith("/") ? path : "/painel", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      for (const client of windows) {
+        if (client.url.startsWith(self.location.origin) && "focus" in client) {
+          return client.navigate(target).then((c) => (c || client).focus());
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
+});
