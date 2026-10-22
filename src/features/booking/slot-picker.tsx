@@ -54,7 +54,7 @@ export function SlotPicker({ timeZone, days, slot, onSlotChange, error, numbered
               >
                 <span className="text-xs capitalize">{f.weekdayShort(anchor)}</span>
                 <span className="text-lg font-semibold">{day.date.slice(8)}</span>
-                <span className="text-[10px] opacity-75">{f.short(anchor).slice(3)}</span>
+                <span className="text-[10px] opacity-90">{f.short(anchor).slice(3)}</span>
               </button>
             );
           })}

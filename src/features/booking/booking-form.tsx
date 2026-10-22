@@ -56,7 +56,7 @@ export function BookingForm({ slug, serviceId, timeZone, days, prepayment }: Pro
         error={e.starts_at?.[0]}
       />
 
-      <fieldset className={cn("min-w-0 space-y-5", !slot && "pointer-events-none opacity-50")}>
+      <fieldset disabled={!slot} className={cn("min-w-0 space-y-5", !slot && "opacity-50")}>
         <legend className="mb-3 text-sm font-semibold text-ink-900">3. Seus dados</legend>
         <Field label="Nome" name="name" errors={e.name}>
           <Input id="name" name="name" autoComplete="name" required />

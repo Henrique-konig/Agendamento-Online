@@ -17,7 +17,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "vercel-build": "node scripts/vercel-build.mjs"
+    "vercel-build": "node scripts/vercel-build.mjs",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
@@ -27,7 +28,7 @@
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "next": "16.4.2",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^10.2.0",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
@@ -37,6 +38,8 @@
     "zod": "^4.3.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/turbopack": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
@@ -49,6 +52,7 @@
     "dotenv": "^18.0.8",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "playwright-core": "^1.56.1",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "^7.10.1",

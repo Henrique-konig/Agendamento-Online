@@ -63,7 +63,7 @@ export function DemoBooking() {
                       : "bg-ink-50 text-ink-700 hover:bg-ink-100",
                   )}
                 >
-                  <span className="block text-[11px] opacity-70">{d.label}</span>
+                  <span className="block text-[11px] opacity-90">{d.label}</span>
                   <span className="block font-display text-lg leading-tight font-semibold">
                     {d.day}
                   </span>
