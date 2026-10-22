@@ -33,6 +33,7 @@ export function makeProfessional(overrides: Partial<Professional> = {}): Profess
     notify_new_booking: true,
     reminder_email: true,
     reminder_whatsapp: false,
+    ask_reviews: true,
     created_at: new Date("2026-01-01T00:00:00Z"),
     updated_at: new Date("2026-01-01T00:00:00Z"),
     ...overrides,

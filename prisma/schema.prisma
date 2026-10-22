@@ -149,6 +149,7 @@ model Professional {
   notify_new_booking    Boolean  @default(true)
   reminder_email        Boolean  @default(true)
   reminder_whatsapp     Boolean  @default(false)
+  ask_reviews           Boolean  @default(true)
   created_at            DateTime @default(now()) @db.Timestamptz(6)
   updated_at            DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
@@ -161,6 +162,7 @@ model Professional {
   appointments       Appointment[]
   quote_requests     QuoteRequest[]
   notification_log   NotificationLog[]
+  reviews            Review[]
   google_connection  GoogleConnection?
   pix_settings       PixSettings?
 
@@ -244,6 +246,7 @@ model Client {
   professional   Professional   @relation(fields: [professional_id], references: [id], onDelete: Cascade)
   appointments   Appointment[]
   quote_requests QuoteRequest[]
+  reviews        Review[]
 
   @@unique([professional_id, phone])
   @@map("clients")
@@ -264,6 +267,7 @@ model Appointment {
   cancel_token         String            @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cancelled_at         DateTime?         @db.Timestamptz(6)
   reminder_sent_at     DateTime?         @db.Timestamptz(6)
+  review_requested_at  DateTime?         @db.Timestamptz(6)
   client_confirmed_at  DateTime?         @db.Timestamptz(6)
   google_event_id      String?
   payment_status       PaymentStatus     @default(not_required)
@@ -280,6 +284,7 @@ model Appointment {
   client           Client            @relation(fields: [client_id], references: [id], onDelete: Cascade)
   service          Service?          @relation(fields: [service_id], references: [id], onDelete: SetNull)
   notification_log NotificationLog[]
+  review           Review?
 
   @@unique([payment_provider, payment_provider_id])
   @@index([professional_id, starts_at])
@@ -331,6 +336,25 @@ model NotificationLog {
 
   @@index([professional_id, created_at(sort: Desc)])
   @@map("notification_log")
+}
+
+/// Avaliação do cliente após o atendimento (uma por agendamento; o profissional pode ocultar).
+model Review {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professional_id String   @db.Uuid
+  appointment_id  String   @unique @db.Uuid
+  client_id       String   @db.Uuid
+  rating          Int      @db.SmallInt
+  comment         String?
+  hidden          Boolean  @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  professional Professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+  appointment  Appointment  @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([professional_id, hidden, created_at(sort: Desc)])
+  @@map("reviews")
 }
 
 /// Credenciais OAuth do Google (tokens criptografados pela aplicação).

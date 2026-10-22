@@ -215,8 +215,9 @@ export async function rescheduleBookingByToken(
         ends_at: new Date(newStart.getTime() + duration),
         // Sem confirmação automática, o novo horário volta a depender do profissional.
         ...(professional.auto_confirm ? {} : { status: "pending" as const }),
-        // O lembrete vale para o novo horário.
+        // O lembrete e a confirmação de presença valem para o novo horário.
         reminder_sent_at: null,
+        client_confirmed_at: null,
       },
     });
   } catch (error) {

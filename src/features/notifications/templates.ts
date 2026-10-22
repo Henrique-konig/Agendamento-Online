@@ -299,3 +299,17 @@ export function passwordResetEmail(input: {
     }),
   };
 }
+
+/** Pedido de avaliação enviado ao cliente depois do atendimento. */
+export function reviewRequestEmail(ctx: AppointmentContext): RenderedEmail {
+  return {
+    subject: `Como foi seu atendimento com ${ctx.professional.displayName}?`,
+    ...layout({
+      heading: "Como foi o atendimento?",
+      intro: `Olá, ${ctx.client.name}! Obrigado por ter vindo. Sua opinião ajuda ${ctx.professional.displayName} a melhorar e ajuda outras pessoas a escolher. Leva menos de um minuto.`,
+      details: appointmentDetails(ctx),
+      cta: { label: "Avaliar atendimento", url: `${ctx.manageUrl}/avaliar` },
+      footer: FOOTER,
+    }),
+  };
+}

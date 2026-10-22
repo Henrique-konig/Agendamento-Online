@@ -44,3 +44,7 @@ next-env.d.ts
 
 # prisma
 /src/generated/
+
+# Testes de ponta a ponta
+/playwright-report/
+/test-results/
